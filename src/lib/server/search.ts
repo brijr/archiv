@@ -11,7 +11,7 @@ import { getAuthContext } from "./auth-helpers"
 export const searchAssets = createServerFn({ method: "GET" })
   .inputValidator((d: { query: string; limit?: number }) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { query, limit = 50 } = data
     const db = getDb(env.DB)
 

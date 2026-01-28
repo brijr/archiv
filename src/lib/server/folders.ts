@@ -12,7 +12,7 @@ import { getAuthContext } from "./auth-helpers"
 // Get all folders (flat list)
 export const getFolders = createServerFn({ method: "GET" })
   .handler(async () => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const db = getDb(env.DB)
 
     const folderList = await db
@@ -27,7 +27,7 @@ export const getFolders = createServerFn({ method: "GET" })
 // Get folders as tree structure
 export const getFolderTree = createServerFn({ method: "GET" })
   .handler(async () => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const db = getDb(env.DB)
 
     const folderList = await db
@@ -65,7 +65,7 @@ export const getFolderTree = createServerFn({ method: "GET" })
 export const getFolder = createServerFn({ method: "GET" })
   .inputValidator((d: { slug: string }) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { slug } = data
     const db = getDb(env.DB)
 
@@ -114,7 +114,7 @@ export const getFolder = createServerFn({ method: "GET" })
 export const createFolder = createServerFn({ method: "POST" })
   .inputValidator((d: CreateFolderInput) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { name, parentId } = data
     const db = getDb(env.DB)
 
@@ -158,7 +158,7 @@ export const createFolder = createServerFn({ method: "POST" })
 export const updateFolder = createServerFn({ method: "POST" })
   .inputValidator((d: UpdateFolderInput) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { id, name } = data
     const db = getDb(env.DB)
 
@@ -198,7 +198,7 @@ export const updateFolder = createServerFn({ method: "POST" })
 export const deleteFolder = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { id } = data
     const db = getDb(env.DB)
 
@@ -221,7 +221,7 @@ export const deleteFolder = createServerFn({ method: "POST" })
 // Get folder counts for sidebar
 export const getFolderCounts = createServerFn({ method: "GET" })
   .handler(async () => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const db = getDb(env.DB)
 
     const counts = await db

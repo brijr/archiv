@@ -13,7 +13,7 @@ import { getAuthContext } from "./auth-helpers"
 export const uploadAsset = createServerFn({ method: "POST" })
   .inputValidator((d: FormData) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const file = data.get("file") as File
     const folderId = data.get("folderId") as string | null
 
@@ -68,7 +68,7 @@ export const uploadAsset = createServerFn({ method: "POST" })
 export const getAssets = createServerFn({ method: "GET" })
   .inputValidator((d: { page?: number; limit?: number; folderId?: string; tagId?: string; search?: string } | undefined) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { page = 1, limit = 50, folderId, tagId, search } = data || {}
     const db = getDb(env.DB)
 
@@ -138,7 +138,7 @@ export const getAssets = createServerFn({ method: "GET" })
 export const getAsset = createServerFn({ method: "GET" })
   .inputValidator((d: { id: string }) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { id } = data
     const db = getDb(env.DB)
 
@@ -168,7 +168,7 @@ export const getAsset = createServerFn({ method: "GET" })
 export const updateAsset = createServerFn({ method: "POST" })
   .inputValidator((d: UpdateAssetInput) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { id, altText, description, folderId } = data
     const db = getDb(env.DB)
 
@@ -212,7 +212,7 @@ export const updateAsset = createServerFn({ method: "POST" })
 export const deleteAsset = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { id } = data
     const db = getDb(env.DB)
 
@@ -238,7 +238,7 @@ export const deleteAsset = createServerFn({ method: "POST" })
 export const deleteAssets = createServerFn({ method: "POST" })
   .inputValidator((d: { ids: string[] }) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { ids } = data
     const db = getDb(env.DB)
 
@@ -265,7 +265,7 @@ export const deleteAssets = createServerFn({ method: "POST" })
 export const moveAssets = createServerFn({ method: "POST" })
   .inputValidator((d: { ids: string[]; folderId: string | null }) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { ids, folderId } = data
     const db = getDb(env.DB)
 
@@ -291,7 +291,7 @@ export const moveAssets = createServerFn({ method: "POST" })
 export const setAssetTags = createServerFn({ method: "POST" })
   .inputValidator((d: { assetId: string; tagIds: string[] }) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { assetId, tagIds } = data
     const db = getDb(env.DB)
 
@@ -342,7 +342,7 @@ export const setAssetTags = createServerFn({ method: "POST" })
 export const tagAssets = createServerFn({ method: "POST" })
   .inputValidator((d: { ids: string[]; tagId: string }) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { ids, tagId } = data
     const db = getDb(env.DB)
 
@@ -376,7 +376,7 @@ export const tagAssets = createServerFn({ method: "POST" })
 // Get dashboard stats
 export const getDashboardStats = createServerFn({ method: "GET" })
   .handler(async () => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const db = getDb(env.DB)
 
     const [assetCount, folderCount, tagCount, storageResult] = await Promise.all([

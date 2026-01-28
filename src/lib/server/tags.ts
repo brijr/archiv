@@ -12,7 +12,7 @@ import { getAuthContext } from "./auth-helpers"
 // Get all tags with asset counts
 export const getTags = createServerFn({ method: "GET" })
   .handler(async () => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const db = getDb(env.DB)
 
     const tagList = await db
@@ -39,7 +39,7 @@ export const getTags = createServerFn({ method: "GET" })
 export const getTag = createServerFn({ method: "GET" })
   .inputValidator((d: { id: string }) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { id } = data
     const db = getDb(env.DB)
 
@@ -58,7 +58,7 @@ export const getTag = createServerFn({ method: "GET" })
 export const createTag = createServerFn({ method: "POST" })
   .inputValidator((d: CreateTagInput) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { name, color } = data
     const db = getDb(env.DB)
 
@@ -94,7 +94,7 @@ export const createTag = createServerFn({ method: "POST" })
 export const updateTag = createServerFn({ method: "POST" })
   .inputValidator((d: UpdateTagInput) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { id, name, color } = data
     const db = getDb(env.DB)
 
@@ -148,7 +148,7 @@ export const updateTag = createServerFn({ method: "POST" })
 export const deleteTag = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { id } = data
     const db = getDb(env.DB)
 
@@ -171,7 +171,7 @@ export const deleteTag = createServerFn({ method: "POST" })
 export const getAssetTags = createServerFn({ method: "GET" })
   .inputValidator((d: { assetId: string }) => d)
   .handler(async ({ data }) => {
-    const auth = getAuthContext()
+    const auth = await getAuthContext()
     const { assetId } = data
     const db = getDb(env.DB)
 
