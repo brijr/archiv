@@ -7,7 +7,7 @@ import {
   Download04Icon,
   ExternalLinkIcon,
   FileIcon,
-  VideoPlayIcon,
+  Video01Icon,
   Pdf01Icon,
 } from "@hugeicons/core-free-icons"
 import { toast } from "sonner"
@@ -119,7 +119,7 @@ function AssetDetailPage() {
   const showVideoPreview = isVideo(asset.mimeType)
 
   function getFileIcon(mimeType: string) {
-    if (isVideo(mimeType)) return VideoPlayIcon
+    if (isVideo(mimeType)) return Video01Icon
     if (mimeType === "application/pdf") return Pdf01Icon
     return FileIcon
   }

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { FileIcon, VideoPlayIcon, Pdf01Icon, Image01Icon } from "@hugeicons/core-free-icons"
+import { FileIcon, Video01Icon, Pdf01Icon, Image01Icon } from "@hugeicons/core-free-icons"
 
 import { cn } from "@/lib/utils"
 import { formatBytes } from "@/lib/utils"
@@ -18,7 +18,7 @@ interface AssetCardProps {
 
 function getFileIcon(mimeType: string) {
   if (isImage(mimeType)) return Image01Icon
-  if (isVideo(mimeType)) return VideoPlayIcon
+  if (isVideo(mimeType)) return Video01Icon
   if (mimeType === "application/pdf") return Pdf01Icon
   return FileIcon
 }
