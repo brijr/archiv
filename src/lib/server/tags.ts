@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start"
 import { eq, and, sql } from "drizzle-orm"
 import { nanoid } from "nanoid"
+import { env } from "cloudflare:workers"
 
 import { getDb } from "@/lib/db"
 import { tags, assetTags } from "@/db/schema"
@@ -9,8 +10,7 @@ import type { Tag, CreateTagInput, UpdateTagInput } from "@/lib/types"
 
 // Get all tags with asset counts
 export const getTags = createServerFn({ method: "GET" })
-  .handler(async ({ context }) => {
-    const env = context.cloudflare.env
+  .handler(async () => {
     const db = getDb(env.DB)
 
     const tagList = await db
@@ -32,10 +32,8 @@ export const getTags = createServerFn({ method: "GET" })
 
 // Get single tag
 export const getTag = createServerFn({ method: "GET" })
-  .validator((data: { id: string }) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: { id: string } }) => {
     const { id } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     const tag = await db.query.tags.findFirst({
@@ -51,10 +49,8 @@ export const getTag = createServerFn({ method: "GET" })
 
 // Create tag
 export const createTag = createServerFn({ method: "POST" })
-  .validator((data: CreateTagInput) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: CreateTagInput }) => {
     const { name, color } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     const id = nanoid(12)
@@ -84,10 +80,8 @@ export const createTag = createServerFn({ method: "POST" })
 
 // Update tag
 export const updateTag = createServerFn({ method: "POST" })
-  .validator((data: UpdateTagInput) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: UpdateTagInput }) => {
     const { id, name, color } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     const updates: Partial<Tag> = {}
@@ -128,10 +122,8 @@ export const updateTag = createServerFn({ method: "POST" })
 
 // Delete tag
 export const deleteTag = createServerFn({ method: "POST" })
-  .validator((data: { id: string }) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: { id: string } }) => {
     const { id } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     // asset_tags entries will be deleted due to ON DELETE CASCADE
@@ -142,10 +134,8 @@ export const deleteTag = createServerFn({ method: "POST" })
 
 // Get tags for an asset
 export const getAssetTags = createServerFn({ method: "GET" })
-  .validator((data: { assetId: string }) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: { assetId: string } }) => {
     const { assetId } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     const assetTagRecords = await db

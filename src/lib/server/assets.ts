@@ -1,16 +1,16 @@
 import { createServerFn } from "@tanstack/react-start"
-import { eq, desc, and, like, sql, inArray } from "drizzle-orm"
+import { eq, desc, and, sql, inArray } from "drizzle-orm"
 import { nanoid } from "nanoid"
+import { env } from "cloudflare:workers"
 
 import { getDb } from "@/lib/db"
 import { generateR2Key, getCdnUrl, deleteR2Object, uploadToR2, getContentType } from "@/lib/r2"
-import { assets, assetTags, tags } from "@/db/schema"
-import type { Asset, AssetWithTags, PaginatedResponse, AssetFilters, CreateAssetInput, UpdateAssetInput } from "@/lib/types"
+import { assets, assetTags, tags, folders } from "@/db/schema"
+import type { Asset, AssetWithTags, PaginatedResponse, UpdateAssetInput } from "@/lib/types"
 
 // Upload a file to R2 and create asset record
 export const uploadAsset = createServerFn({ method: "POST" })
-  .validator((data: FormData) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: FormData }) => {
     const file = data.get("file") as File
     const folderId = data.get("folderId") as string | null
 
@@ -18,7 +18,6 @@ export const uploadAsset = createServerFn({ method: "POST" })
       throw new Error("No file provided")
     }
 
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     // Generate unique ID and R2 key
@@ -53,10 +52,8 @@ export const uploadAsset = createServerFn({ method: "POST" })
 
 // Get paginated assets
 export const getAssets = createServerFn({ method: "GET" })
-  .validator((data: { page?: number; limit?: number; folderId?: string; tagId?: string; search?: string }) => data)
-  .handler(async ({ data, context }) => {
-    const { page = 1, limit = 50, folderId, tagId, search } = data
-    const env = context.cloudflare.env
+  .handler(async ({ data }: { data?: { page?: number; limit?: number; folderId?: string; tagId?: string; search?: string } }) => {
+    const { page = 1, limit = 50, folderId, tagId, search } = data || {}
     const db = getDb(env.DB)
 
     const offset = (page - 1) * limit
@@ -122,10 +119,8 @@ export const getAssets = createServerFn({ method: "GET" })
 
 // Get single asset with tags
 export const getAsset = createServerFn({ method: "GET" })
-  .validator((data: { id: string }) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: { id: string } }) => {
     const { id } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     const asset = await db.query.assets.findFirst({
@@ -152,10 +147,8 @@ export const getAsset = createServerFn({ method: "GET" })
 
 // Update asset metadata
 export const updateAsset = createServerFn({ method: "POST" })
-  .validator((data: UpdateAssetInput) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: UpdateAssetInput }) => {
     const { id, altText, description, folderId } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     const [updated] = await db
@@ -181,10 +174,8 @@ export const updateAsset = createServerFn({ method: "POST" })
 
 // Delete single asset
 export const deleteAsset = createServerFn({ method: "POST" })
-  .validator((data: { id: string }) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: { id: string } }) => {
     const { id } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     // Get asset to find R2 key
@@ -207,10 +198,8 @@ export const deleteAsset = createServerFn({ method: "POST" })
 
 // Bulk delete assets
 export const deleteAssets = createServerFn({ method: "POST" })
-  .validator((data: { ids: string[] }) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: { ids: string[] } }) => {
     const { ids } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     // Get all assets to find R2 keys
@@ -232,10 +221,8 @@ export const deleteAssets = createServerFn({ method: "POST" })
 
 // Move assets to folder
 export const moveAssets = createServerFn({ method: "POST" })
-  .validator((data: { ids: string[]; folderId: string | null }) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: { ids: string[]; folderId: string | null } }) => {
     const { ids, folderId } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     await db
@@ -248,10 +235,8 @@ export const moveAssets = createServerFn({ method: "POST" })
 
 // Set tags for an asset (replaces all existing tags)
 export const setAssetTags = createServerFn({ method: "POST" })
-  .validator((data: { assetId: string; tagIds: string[] }) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: { assetId: string; tagIds: string[] } }) => {
     const { assetId, tagIds } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     // Remove existing tags
@@ -278,10 +263,8 @@ export const setAssetTags = createServerFn({ method: "POST" })
 
 // Bulk add tag to assets
 export const tagAssets = createServerFn({ method: "POST" })
-  .validator((data: { ids: string[]; tagId: string }) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: { ids: string[]; tagId: string } }) => {
     const { ids, tagId } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     // Insert tag for each asset (ignore duplicates)
@@ -298,13 +281,12 @@ export const tagAssets = createServerFn({ method: "POST" })
 
 // Get dashboard stats
 export const getDashboardStats = createServerFn({ method: "GET" })
-  .handler(async ({ context }) => {
-    const env = context.cloudflare.env
+  .handler(async () => {
     const db = getDb(env.DB)
 
     const [assetCount, folderCount, tagCount, storageResult] = await Promise.all([
       db.select({ count: sql<number>`count(*)` }).from(assets),
-      db.select({ count: sql<number>`count(*)` }).from(await import("@/db/schema").then(m => m.folders)),
+      db.select({ count: sql<number>`count(*)` }).from(folders),
       db.select({ count: sql<number>`count(*)` }).from(tags),
       db.select({ total: sql<number>`COALESCE(SUM(size), 0)` }).from(assets),
     ])

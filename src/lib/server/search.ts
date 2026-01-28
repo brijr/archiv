@@ -1,17 +1,15 @@
 import { createServerFn } from "@tanstack/react-start"
 import { sql, desc } from "drizzle-orm"
+import { env } from "cloudflare:workers"
 
 import { getDb } from "@/lib/db"
 import { assets } from "@/db/schema"
 import { getCdnUrl } from "@/lib/r2"
-import type { Asset } from "@/lib/types"
 
 // Search assets by filename, alt text, and description
 export const searchAssets = createServerFn({ method: "GET" })
-  .validator((data: { query: string; limit?: number }) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: { query: string; limit?: number } }) => {
     const { query, limit = 50 } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     if (!query.trim()) {

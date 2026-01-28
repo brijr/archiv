@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start"
 import { eq, isNull, and, desc, sql } from "drizzle-orm"
 import { nanoid } from "nanoid"
+import { env } from "cloudflare:workers"
 
 import { getDb } from "@/lib/db"
 import { folders, assets } from "@/db/schema"
@@ -9,8 +10,7 @@ import type { Folder, FolderWithChildren, CreateFolderInput, UpdateFolderInput }
 
 // Get all folders (flat list)
 export const getFolders = createServerFn({ method: "GET" })
-  .handler(async ({ context }) => {
-    const env = context.cloudflare.env
+  .handler(async () => {
     const db = getDb(env.DB)
 
     const folderList = await db
@@ -23,8 +23,7 @@ export const getFolders = createServerFn({ method: "GET" })
 
 // Get folders as tree structure
 export const getFolderTree = createServerFn({ method: "GET" })
-  .handler(async ({ context }) => {
-    const env = context.cloudflare.env
+  .handler(async () => {
     const db = getDb(env.DB)
 
     const folderList = await db
@@ -59,10 +58,8 @@ export const getFolderTree = createServerFn({ method: "GET" })
 
 // Get single folder by slug with assets
 export const getFolder = createServerFn({ method: "GET" })
-  .validator((data: { slug: string }) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: { slug: string } }) => {
     const { slug } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     const folder = await db.query.folders.findFirst({
@@ -108,10 +105,8 @@ export const getFolder = createServerFn({ method: "GET" })
 
 // Create folder
 export const createFolder = createServerFn({ method: "POST" })
-  .validator((data: CreateFolderInput) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: CreateFolderInput }) => {
     const { name, parentId } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     const id = nanoid(12)
@@ -141,10 +136,8 @@ export const createFolder = createServerFn({ method: "POST" })
 
 // Update folder
 export const updateFolder = createServerFn({ method: "POST" })
-  .validator((data: UpdateFolderInput) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: UpdateFolderInput }) => {
     const { id, name } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     let slug = slugify(name)
@@ -172,10 +165,8 @@ export const updateFolder = createServerFn({ method: "POST" })
 
 // Delete folder
 export const deleteFolder = createServerFn({ method: "POST" })
-  .validator((data: { id: string }) => data)
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data }: { data: { id: string } }) => {
     const { id } = data
-    const env = context.cloudflare.env
     const db = getDb(env.DB)
 
     // Assets in this folder will have folderId set to null due to ON DELETE SET NULL
@@ -187,8 +178,7 @@ export const deleteFolder = createServerFn({ method: "POST" })
 
 // Get folder counts for sidebar
 export const getFolderCounts = createServerFn({ method: "GET" })
-  .handler(async ({ context }) => {
-    const env = context.cloudflare.env
+  .handler(async () => {
     const db = getDb(env.DB)
 
     const counts = await db
