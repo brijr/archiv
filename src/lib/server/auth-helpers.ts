@@ -3,7 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { getAuth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { members } from "@/db/schema";
-import { getRequestEvent } from "@tanstack/react-start/server";
+import { getRequest } from "@tanstack/react-start/server";
 
 export type AuthContext = {
   userId: string;
@@ -17,13 +17,7 @@ export type AuthContext = {
  * Throws an error if not authenticated or no active organization.
  */
 export async function getAuthContext(): Promise<AuthContext> {
-  const event = getRequestEvent();
-
-  if (!event?.request) {
-    throw new Error("No request context available");
-  }
-
-  const request = event.request;
+  const request = getRequest();
 
   const auth = getAuth(env as any);
   const session = await auth.api.getSession({ headers: request.headers });
