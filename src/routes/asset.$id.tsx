@@ -3,9 +3,9 @@ import { useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowLeft01Icon,
+  ArrowUpRight01Icon,
   Delete02Icon,
   Download04Icon,
-  ExternalLinkIcon,
   FileIcon,
   Video01Icon,
   Pdf01Icon,
@@ -139,7 +139,7 @@ function AssetDetailPage() {
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild>
             <a href={asset.url} target="_blank" rel="noopener noreferrer">
-              <HugeiconsIcon icon={ExternalLinkIcon} className="mr-2 h-4 w-4" strokeWidth={2} />
+              <HugeiconsIcon icon={ArrowUpRight01Icon} className="mr-2 h-4 w-4" strokeWidth={2} />
               Open Original
             </a>
           </Button>
