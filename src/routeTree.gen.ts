@@ -12,7 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as TagsRouteImport } from './routes/tags'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WorkspaceCreateRouteImport } from './routes/workspace/create'
+import { Route as SettingsWorkspaceRouteImport } from './routes/settings/workspace'
 import { Route as SettingsApiKeysRouteImport } from './routes/settings/api-keys'
 import { Route as FolderSlugRouteImport } from './routes/folder.$slug'
 import { Route as AssetIdRouteImport } from './routes/asset.$id'
@@ -39,9 +43,29 @@ const SearchRoute = SearchRouteImport.update({
   path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceCreateRoute = WorkspaceCreateRouteImport.update({
+  id: '/workspace/create',
+  path: '/workspace/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsWorkspaceRoute = SettingsWorkspaceRouteImport.update({
+  id: '/settings/workspace',
+  path: '/settings/workspace',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsApiKeysRoute = SettingsApiKeysRouteImport.update({
@@ -97,12 +121,16 @@ const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
   '/tags': typeof TagsRoute
   '/upload': typeof UploadRoute
   '/asset/$id': typeof AssetIdRoute
   '/folder/$slug': typeof FolderSlugRoute
   '/settings/api-keys': typeof SettingsApiKeysRoute
+  '/settings/workspace': typeof SettingsWorkspaceRoute
+  '/workspace/create': typeof WorkspaceCreateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -113,12 +141,16 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
   '/tags': typeof TagsRoute
   '/upload': typeof UploadRoute
   '/asset/$id': typeof AssetIdRoute
   '/folder/$slug': typeof FolderSlugRoute
   '/settings/api-keys': typeof SettingsApiKeysRoute
+  '/settings/workspace': typeof SettingsWorkspaceRoute
+  '/workspace/create': typeof WorkspaceCreateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -130,12 +162,16 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
   '/tags': typeof TagsRoute
   '/upload': typeof UploadRoute
   '/asset/$id': typeof AssetIdRoute
   '/folder/$slug': typeof FolderSlugRoute
   '/settings/api-keys': typeof SettingsApiKeysRoute
+  '/settings/workspace': typeof SettingsWorkspaceRoute
+  '/workspace/create': typeof WorkspaceCreateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -148,12 +184,16 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
+    | '/register'
     | '/search'
     | '/tags'
     | '/upload'
     | '/asset/$id'
     | '/folder/$slug'
     | '/settings/api-keys'
+    | '/settings/workspace'
+    | '/workspace/create'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -164,12 +204,16 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
+    | '/register'
     | '/search'
     | '/tags'
     | '/upload'
     | '/asset/$id'
     | '/folder/$slug'
     | '/settings/api-keys'
+    | '/settings/workspace'
+    | '/workspace/create'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -180,12 +224,16 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/login'
+    | '/register'
     | '/search'
     | '/tags'
     | '/upload'
     | '/asset/$id'
     | '/folder/$slug'
     | '/settings/api-keys'
+    | '/settings/workspace'
+    | '/workspace/create'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -197,12 +245,16 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
   SearchRoute: typeof SearchRoute
   TagsRoute: typeof TagsRoute
   UploadRoute: typeof UploadRoute
   AssetIdRoute: typeof AssetIdRoute
   FolderSlugRoute: typeof FolderSlugRoute
   SettingsApiKeysRoute: typeof SettingsApiKeysRoute
+  SettingsWorkspaceRoute: typeof SettingsWorkspaceRoute
+  WorkspaceCreateRoute: typeof WorkspaceCreateRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
   DemoStartApiRequestRoute: typeof DemoStartApiRequestRoute
   DemoStartServerFuncsRoute: typeof DemoStartServerFuncsRoute
@@ -235,11 +287,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace/create': {
+      id: '/workspace/create'
+      path: '/workspace/create'
+      fullPath: '/workspace/create'
+      preLoaderRoute: typeof WorkspaceCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/workspace': {
+      id: '/settings/workspace'
+      path: '/settings/workspace'
+      fullPath: '/settings/workspace'
+      preLoaderRoute: typeof SettingsWorkspaceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/api-keys': {
@@ -317,12 +397,16 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
   SearchRoute: SearchRoute,
   TagsRoute: TagsRoute,
   UploadRoute: UploadRoute,
   AssetIdRoute: AssetIdRoute,
   FolderSlugRoute: FolderSlugRoute,
   SettingsApiKeysRoute: SettingsApiKeysRoute,
+  SettingsWorkspaceRoute: SettingsWorkspaceRoute,
+  WorkspaceCreateRoute: WorkspaceCreateRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,
   DemoStartApiRequestRoute: DemoStartApiRequestRoute,
   DemoStartServerFuncsRoute: DemoStartServerFuncsRoute,

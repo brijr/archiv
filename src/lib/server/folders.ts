@@ -6,16 +6,19 @@ import { env } from "cloudflare:workers"
 import { getDb } from "@/lib/db"
 import { folders, assets } from "@/db/schema"
 import { slugify } from "@/lib/utils"
-import type { Folder, FolderWithChildren, CreateFolderInput, UpdateFolderInput } from "@/lib/types"
+import type { FolderWithChildren, CreateFolderInput, UpdateFolderInput } from "@/lib/types"
+import { getAuthContext } from "./auth-helpers"
 
 // Get all folders (flat list)
 export const getFolders = createServerFn({ method: "GET" })
   .handler(async () => {
+    const auth = getAuthContext()
     const db = getDb(env.DB)
 
     const folderList = await db
       .select()
       .from(folders)
+      .where(eq(folders.organizationId, auth.organizationId))
       .orderBy(folders.name)
 
     return folderList
@@ -24,11 +27,13 @@ export const getFolders = createServerFn({ method: "GET" })
 // Get folders as tree structure
 export const getFolderTree = createServerFn({ method: "GET" })
   .handler(async () => {
+    const auth = getAuthContext()
     const db = getDb(env.DB)
 
     const folderList = await db
       .select()
       .from(folders)
+      .where(eq(folders.organizationId, auth.organizationId))
       .orderBy(folders.name)
 
     // Build tree structure
@@ -58,12 +63,14 @@ export const getFolderTree = createServerFn({ method: "GET" })
 
 // Get single folder by slug with assets
 export const getFolder = createServerFn({ method: "GET" })
-  .handler(async ({ data }: { data: { slug: string } }) => {
+  .inputValidator((d: { slug: string }) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { slug } = data
     const db = getDb(env.DB)
 
     const folder = await db.query.folders.findFirst({
-      where: eq(folders.slug, slug),
+      where: and(eq(folders.slug, slug), eq(folders.organizationId, auth.organizationId)),
     })
 
     if (!folder) {
@@ -74,21 +81,21 @@ export const getFolder = createServerFn({ method: "GET" })
     const folderAssets = await db
       .select()
       .from(assets)
-      .where(eq(assets.folderId, folder.id))
+      .where(and(eq(assets.folderId, folder.id), eq(assets.organizationId, auth.organizationId)))
       .orderBy(desc(assets.createdAt))
 
     // Get subfolders
     const subfolders = await db
       .select()
       .from(folders)
-      .where(eq(folders.parentId, folder.id))
+      .where(and(eq(folders.parentId, folder.id), eq(folders.organizationId, auth.organizationId)))
       .orderBy(folders.name)
 
     // Get parent folder for breadcrumbs
     let parent = null
     if (folder.parentId) {
       parent = await db.query.folders.findFirst({
-        where: eq(folders.id, folder.parentId),
+        where: and(eq(folders.id, folder.parentId), eq(folders.organizationId, auth.organizationId)),
       })
     }
 
@@ -105,16 +112,28 @@ export const getFolder = createServerFn({ method: "GET" })
 
 // Create folder
 export const createFolder = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: CreateFolderInput }) => {
+  .inputValidator((d: CreateFolderInput) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { name, parentId } = data
     const db = getDb(env.DB)
+
+    // Verify parent folder belongs to organization if specified
+    if (parentId) {
+      const parent = await db.query.folders.findFirst({
+        where: and(eq(folders.id, parentId), eq(folders.organizationId, auth.organizationId)),
+      })
+      if (!parent) {
+        throw new Error("Parent folder not found or does not belong to organization")
+      }
+    }
 
     const id = nanoid(12)
     let slug = slugify(name)
 
-    // Ensure slug is unique
+    // Ensure slug is unique within organization
     const existing = await db.query.folders.findFirst({
-      where: eq(folders.slug, slug),
+      where: and(eq(folders.slug, slug), eq(folders.organizationId, auth.organizationId)),
     })
     if (existing) {
       slug = `${slug}-${nanoid(4)}`
@@ -127,6 +146,7 @@ export const createFolder = createServerFn({ method: "POST" })
         name,
         slug,
         parentId: parentId || null,
+        organizationId: auth.organizationId,
         createdAt: new Date(),
       })
       .returning()
@@ -136,42 +156,64 @@ export const createFolder = createServerFn({ method: "POST" })
 
 // Update folder
 export const updateFolder = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: UpdateFolderInput }) => {
+  .inputValidator((d: UpdateFolderInput) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { id, name } = data
     const db = getDb(env.DB)
 
+    // Verify folder belongs to organization
+    const existing = await db.query.folders.findFirst({
+      where: and(eq(folders.id, id), eq(folders.organizationId, auth.organizationId)),
+    })
+
+    if (!existing) {
+      throw new Error("Folder not found")
+    }
+
     let slug = slugify(name)
 
-    // Ensure slug is unique (excluding current folder)
-    const existing = await db.query.folders.findFirst({
-      where: and(eq(folders.slug, slug), sql`${folders.id} != ${id}`),
+    // Ensure slug is unique within organization (excluding current folder)
+    const slugConflict = await db.query.folders.findFirst({
+      where: and(
+        eq(folders.slug, slug),
+        eq(folders.organizationId, auth.organizationId),
+        sql`${folders.id} != ${id}`
+      ),
     })
-    if (existing) {
+    if (slugConflict) {
       slug = `${slug}-${nanoid(4)}`
     }
 
     const [updated] = await db
       .update(folders)
       .set({ name, slug })
-      .where(eq(folders.id, id))
+      .where(and(eq(folders.id, id), eq(folders.organizationId, auth.organizationId)))
       .returning()
-
-    if (!updated) {
-      throw new Error("Folder not found")
-    }
 
     return updated
   })
 
 // Delete folder
 export const deleteFolder = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: { id: string } }) => {
+  .inputValidator((d: { id: string }) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { id } = data
     const db = getDb(env.DB)
 
+    // Verify folder belongs to organization
+    const existing = await db.query.folders.findFirst({
+      where: and(eq(folders.id, id), eq(folders.organizationId, auth.organizationId)),
+    })
+
+    if (!existing) {
+      throw new Error("Folder not found")
+    }
+
     // Assets in this folder will have folderId set to null due to ON DELETE SET NULL
     // Subfolders will be deleted due to ON DELETE CASCADE
-    await db.delete(folders).where(eq(folders.id, id))
+    await db.delete(folders).where(and(eq(folders.id, id), eq(folders.organizationId, auth.organizationId)))
 
     return { success: true, id }
   })
@@ -179,6 +221,7 @@ export const deleteFolder = createServerFn({ method: "POST" })
 // Get folder counts for sidebar
 export const getFolderCounts = createServerFn({ method: "GET" })
   .handler(async () => {
+    const auth = getAuthContext()
     const db = getDb(env.DB)
 
     const counts = await db
@@ -187,13 +230,14 @@ export const getFolderCounts = createServerFn({ method: "GET" })
         count: sql<number>`count(*)`,
       })
       .from(assets)
+      .where(eq(assets.organizationId, auth.organizationId))
       .groupBy(assets.folderId)
 
     // Add unfiled count
     const unfiledResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(assets)
-      .where(isNull(assets.folderId))
+      .where(and(isNull(assets.folderId), eq(assets.organizationId, auth.organizationId)))
 
     return {
       counts: Object.fromEntries(

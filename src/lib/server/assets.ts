@@ -7,10 +7,13 @@ import { getDb } from "@/lib/db"
 import { generateR2Key, getCdnUrl, deleteR2Object, uploadToR2, getContentType } from "@/lib/r2"
 import { assets, assetTags, tags, folders } from "@/db/schema"
 import type { Asset, AssetWithTags, PaginatedResponse, UpdateAssetInput } from "@/lib/types"
+import { getAuthContext } from "./auth-helpers"
 
 // Upload a file to R2 and create asset record
 export const uploadAsset = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: FormData }) => {
+  .inputValidator((d: FormData) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const file = data.get("file") as File
     const folderId = data.get("folderId") as string | null
 
@@ -20,9 +23,19 @@ export const uploadAsset = createServerFn({ method: "POST" })
 
     const db = getDb(env.DB)
 
-    // Generate unique ID and R2 key
+    // Verify folder belongs to organization if specified
+    if (folderId) {
+      const folder = await db.query.folders.findFirst({
+        where: and(eq(folders.id, folderId), eq(folders.organizationId, auth.organizationId)),
+      })
+      if (!folder) {
+        throw new Error("Folder not found or does not belong to organization")
+      }
+    }
+
+    // Generate unique ID and R2 key (scoped by organization)
     const id = nanoid(12)
-    const r2Key = generateR2Key(file.name)
+    const r2Key = generateR2Key(file.name, auth.organizationId)
 
     // Upload to R2
     const arrayBuffer = await file.arrayBuffer()
@@ -39,6 +52,7 @@ export const uploadAsset = createServerFn({ method: "POST" })
         mimeType: file.type || getContentType(file.name),
         size: file.size,
         folderId: folderId || null,
+        organizationId: auth.organizationId,
         createdAt: now,
         updatedAt: now,
       })
@@ -52,12 +66,14 @@ export const uploadAsset = createServerFn({ method: "POST" })
 
 // Get paginated assets
 export const getAssets = createServerFn({ method: "GET" })
-  .handler(async ({ data }: { data?: { page?: number; limit?: number; folderId?: string; tagId?: string; search?: string } }) => {
+  .inputValidator((d: { page?: number; limit?: number; folderId?: string; tagId?: string; search?: string } | undefined) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { page = 1, limit = 50, folderId, tagId, search } = data || {}
     const db = getDb(env.DB)
 
     const offset = (page - 1) * limit
-    const conditions = []
+    const conditions = [eq(assets.organizationId, auth.organizationId)]
 
     if (folderId) {
       conditions.push(eq(assets.folderId, folderId))
@@ -86,19 +102,20 @@ export const getAssets = createServerFn({ method: "GET" })
           altText: assets.altText,
           description: assets.description,
           folderId: assets.folderId,
+          organizationId: assets.organizationId,
           createdAt: assets.createdAt,
           updatedAt: assets.updatedAt,
         })
         .from(assets)
         .innerJoin(assetTags, eq(assets.id, assetTags.assetId))
-        .where(conditions.length > 0 ? and(eq(assetTags.tagId, tagId), ...conditions) : eq(assetTags.tagId, tagId)) as any
-    } else if (conditions.length > 0) {
+        .where(and(eq(assetTags.tagId, tagId), ...conditions)) as any
+    } else {
       query = query.where(and(...conditions)) as any
     }
 
     const [assetList, countResult] = await Promise.all([
       query.orderBy(desc(assets.createdAt)).limit(limit).offset(offset),
-      db.select({ count: sql<number>`count(*)` }).from(assets).where(conditions.length > 0 ? and(...conditions) : undefined),
+      db.select({ count: sql<number>`count(*)` }).from(assets).where(and(...conditions)),
     ])
 
     const total = countResult[0]?.count || 0
@@ -119,12 +136,14 @@ export const getAssets = createServerFn({ method: "GET" })
 
 // Get single asset with tags
 export const getAsset = createServerFn({ method: "GET" })
-  .handler(async ({ data }: { data: { id: string } }) => {
+  .inputValidator((d: { id: string }) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { id } = data
     const db = getDb(env.DB)
 
     const asset = await db.query.assets.findFirst({
-      where: eq(assets.id, id),
+      where: and(eq(assets.id, id), eq(assets.organizationId, auth.organizationId)),
     })
 
     if (!asset) {
@@ -147,9 +166,30 @@ export const getAsset = createServerFn({ method: "GET" })
 
 // Update asset metadata
 export const updateAsset = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: UpdateAssetInput }) => {
+  .inputValidator((d: UpdateAssetInput) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { id, altText, description, folderId } = data
     const db = getDb(env.DB)
+
+    // Verify asset belongs to organization
+    const existing = await db.query.assets.findFirst({
+      where: and(eq(assets.id, id), eq(assets.organizationId, auth.organizationId)),
+    })
+
+    if (!existing) {
+      throw new Error("Asset not found")
+    }
+
+    // Verify folder belongs to organization if specified
+    if (folderId) {
+      const folder = await db.query.folders.findFirst({
+        where: and(eq(folders.id, folderId), eq(folders.organizationId, auth.organizationId)),
+      })
+      if (!folder) {
+        throw new Error("Folder not found or does not belong to organization")
+      }
+    }
 
     const [updated] = await db
       .update(assets)
@@ -159,12 +199,8 @@ export const updateAsset = createServerFn({ method: "POST" })
         folderId,
         updatedAt: new Date(),
       })
-      .where(eq(assets.id, id))
+      .where(and(eq(assets.id, id), eq(assets.organizationId, auth.organizationId)))
       .returning()
-
-    if (!updated) {
-      throw new Error("Asset not found")
-    }
 
     return {
       ...updated,
@@ -174,13 +210,15 @@ export const updateAsset = createServerFn({ method: "POST" })
 
 // Delete single asset
 export const deleteAsset = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: { id: string } }) => {
+  .inputValidator((d: { id: string }) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { id } = data
     const db = getDb(env.DB)
 
-    // Get asset to find R2 key
+    // Get asset to find R2 key (verify ownership)
     const asset = await db.query.assets.findFirst({
-      where: eq(assets.id, id),
+      where: and(eq(assets.id, id), eq(assets.organizationId, auth.organizationId)),
     })
 
     if (!asset) {
@@ -198,15 +236,17 @@ export const deleteAsset = createServerFn({ method: "POST" })
 
 // Bulk delete assets
 export const deleteAssets = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: { ids: string[] } }) => {
+  .inputValidator((d: { ids: string[] }) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { ids } = data
     const db = getDb(env.DB)
 
-    // Get all assets to find R2 keys
+    // Get all assets to find R2 keys (verify ownership)
     const assetsToDelete = await db
       .select()
       .from(assets)
-      .where(inArray(assets.id, ids))
+      .where(and(inArray(assets.id, ids), eq(assets.organizationId, auth.organizationId)))
 
     // Delete from R2
     await Promise.all(
@@ -214,30 +254,67 @@ export const deleteAssets = createServerFn({ method: "POST" })
     )
 
     // Delete from database
-    await db.delete(assets).where(inArray(assets.id, ids))
+    await db.delete(assets).where(
+      and(inArray(assets.id, ids), eq(assets.organizationId, auth.organizationId))
+    )
 
     return { success: true, count: assetsToDelete.length }
   })
 
 // Move assets to folder
 export const moveAssets = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: { ids: string[]; folderId: string | null } }) => {
+  .inputValidator((d: { ids: string[]; folderId: string | null }) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { ids, folderId } = data
     const db = getDb(env.DB)
+
+    // Verify folder belongs to organization if specified
+    if (folderId) {
+      const folder = await db.query.folders.findFirst({
+        where: and(eq(folders.id, folderId), eq(folders.organizationId, auth.organizationId)),
+      })
+      if (!folder) {
+        throw new Error("Folder not found or does not belong to organization")
+      }
+    }
 
     await db
       .update(assets)
       .set({ folderId, updatedAt: new Date() })
-      .where(inArray(assets.id, ids))
+      .where(and(inArray(assets.id, ids), eq(assets.organizationId, auth.organizationId)))
 
     return { success: true, count: ids.length }
   })
 
 // Set tags for an asset (replaces all existing tags)
 export const setAssetTags = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: { assetId: string; tagIds: string[] } }) => {
+  .inputValidator((d: { assetId: string; tagIds: string[] }) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { assetId, tagIds } = data
     const db = getDb(env.DB)
+
+    // Verify asset belongs to organization
+    const asset = await db.query.assets.findFirst({
+      where: and(eq(assets.id, assetId), eq(assets.organizationId, auth.organizationId)),
+    })
+
+    if (!asset) {
+      throw new Error("Asset not found")
+    }
+
+    // Verify all tags belong to organization
+    if (tagIds.length > 0) {
+      const orgTags = await db
+        .select()
+        .from(tags)
+        .where(and(inArray(tags.id, tagIds), eq(tags.organizationId, auth.organizationId)))
+
+      if (orgTags.length !== tagIds.length) {
+        throw new Error("One or more tags not found or do not belong to organization")
+      }
+    }
 
     // Remove existing tags
     await db.delete(assetTags).where(eq(assetTags.assetId, assetId))
@@ -263,32 +340,50 @@ export const setAssetTags = createServerFn({ method: "POST" })
 
 // Bulk add tag to assets
 export const tagAssets = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: { ids: string[]; tagId: string } }) => {
+  .inputValidator((d: { ids: string[]; tagId: string }) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { ids, tagId } = data
     const db = getDb(env.DB)
 
-    // Insert tag for each asset (ignore duplicates)
-    for (const assetId of ids) {
+    // Verify tag belongs to organization
+    const tag = await db.query.tags.findFirst({
+      where: and(eq(tags.id, tagId), eq(tags.organizationId, auth.organizationId)),
+    })
+
+    if (!tag) {
+      throw new Error("Tag not found or does not belong to organization")
+    }
+
+    // Verify all assets belong to organization
+    const orgAssets = await db
+      .select()
+      .from(assets)
+      .where(and(inArray(assets.id, ids), eq(assets.organizationId, auth.organizationId)))
+
+    // Insert tag for each verified asset (ignore duplicates)
+    for (const asset of orgAssets) {
       try {
-        await db.insert(assetTags).values({ assetId, tagId })
+        await db.insert(assetTags).values({ assetId: asset.id, tagId })
       } catch {
         // Ignore duplicate key errors
       }
     }
 
-    return { success: true, count: ids.length }
+    return { success: true, count: orgAssets.length }
   })
 
 // Get dashboard stats
 export const getDashboardStats = createServerFn({ method: "GET" })
   .handler(async () => {
+    const auth = getAuthContext()
     const db = getDb(env.DB)
 
     const [assetCount, folderCount, tagCount, storageResult] = await Promise.all([
-      db.select({ count: sql<number>`count(*)` }).from(assets),
-      db.select({ count: sql<number>`count(*)` }).from(folders),
-      db.select({ count: sql<number>`count(*)` }).from(tags),
-      db.select({ total: sql<number>`COALESCE(SUM(size), 0)` }).from(assets),
+      db.select({ count: sql<number>`count(*)` }).from(assets).where(eq(assets.organizationId, auth.organizationId)),
+      db.select({ count: sql<number>`count(*)` }).from(folders).where(eq(folders.organizationId, auth.organizationId)),
+      db.select({ count: sql<number>`count(*)` }).from(tags).where(eq(tags.organizationId, auth.organizationId)),
+      db.select({ total: sql<number>`COALESCE(SUM(size), 0)` }).from(assets).where(eq(assets.organizationId, auth.organizationId)),
     ])
 
     return {

@@ -35,7 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 export const Route = createFileRoute("/asset/$id")({
   component: AssetDetailPage,
-  loader: async ({ params, context }) => {
+  loader: async ({ params }) => {
     return getAsset({ data: { id: params.id } })
   },
   pendingComponent: AssetDetailSkeleton,

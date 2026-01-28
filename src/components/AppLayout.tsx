@@ -7,6 +7,8 @@ interface AppLayoutProps {
   children: React.ReactNode
 }
 
+// Simplified AppLayout for development
+// TODO: Add auth checks when Better Auth is fully configured
 export function AppLayout({ children }: AppLayoutProps) {
   return (
     <TooltipProvider>

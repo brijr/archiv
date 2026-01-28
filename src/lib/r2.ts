@@ -14,14 +14,16 @@ function slugify(str: string): string {
 
 /**
  * Generate a unique R2 key for an asset
- * Format: {nanoid}-{slugified-filename}.{ext}
+ * Format: {organizationId}/{nanoid}-{slugified-filename}.{ext}
+ * Organization prefix ensures tenant isolation in R2
  */
-export function generateR2Key(filename: string): string {
+export function generateR2Key(filename: string, organizationId: string): string {
   const id = nanoid(12);
   const ext = filename.split(".").pop()?.toLowerCase() || "";
   const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
   const slug = slugify(nameWithoutExt);
-  return slug ? `${id}-${slug}.${ext}` : `${id}.${ext}`;
+  const name = slug ? `${id}-${slug}.${ext}` : `${id}.${ext}`;
+  return `${organizationId}/${name}`;
 }
 
 /**

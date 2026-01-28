@@ -253,7 +253,7 @@ function TagsPage() {
               <Label>Preview</Label>
               <div className="mt-2">
                 <TagBadge
-                  tag={{ id: "preview", name: formData.name || "Tag Name", slug: "", color: formData.color, createdAt: null }}
+                  tag={{ id: "preview", name: formData.name || "Tag Name", slug: "", color: formData.color, createdAt: null, updatedAt: null, organizationId: "default-org" }}
                 />
               </div>
             </div>

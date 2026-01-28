@@ -4,13 +4,15 @@ import { nanoid } from "nanoid"
 import { env } from "cloudflare:workers"
 
 import { getDb } from "@/lib/db"
-import { tags, assetTags } from "@/db/schema"
+import { tags, assetTags, assets } from "@/db/schema"
 import { slugify } from "@/lib/utils"
 import type { Tag, CreateTagInput, UpdateTagInput } from "@/lib/types"
+import { getAuthContext } from "./auth-helpers"
 
 // Get all tags with asset counts
 export const getTags = createServerFn({ method: "GET" })
   .handler(async () => {
+    const auth = getAuthContext()
     const db = getDb(env.DB)
 
     const tagList = await db
@@ -19,12 +21,15 @@ export const getTags = createServerFn({ method: "GET" })
         name: tags.name,
         slug: tags.slug,
         color: tags.color,
+        organizationId: tags.organizationId,
         createdAt: tags.createdAt,
+        updatedAt: tags.updatedAt,
         assetCount: sql<number>`(
           SELECT COUNT(*) FROM asset_tags WHERE tag_id = ${tags.id}
         )`,
       })
       .from(tags)
+      .where(eq(tags.organizationId, auth.organizationId))
       .orderBy(tags.name)
 
     return tagList
@@ -32,12 +37,14 @@ export const getTags = createServerFn({ method: "GET" })
 
 // Get single tag
 export const getTag = createServerFn({ method: "GET" })
-  .handler(async ({ data }: { data: { id: string } }) => {
+  .inputValidator((d: { id: string }) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { id } = data
     const db = getDb(env.DB)
 
     const tag = await db.query.tags.findFirst({
-      where: eq(tags.id, id),
+      where: and(eq(tags.id, id), eq(tags.organizationId, auth.organizationId)),
     })
 
     if (!tag) {
@@ -49,21 +56,24 @@ export const getTag = createServerFn({ method: "GET" })
 
 // Create tag
 export const createTag = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: CreateTagInput }) => {
+  .inputValidator((d: CreateTagInput) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { name, color } = data
     const db = getDb(env.DB)
 
     const id = nanoid(12)
     let slug = slugify(name)
 
-    // Ensure slug is unique
+    // Ensure slug is unique within organization
     const existing = await db.query.tags.findFirst({
-      where: eq(tags.slug, slug),
+      where: and(eq(tags.slug, slug), eq(tags.organizationId, auth.organizationId)),
     })
     if (existing) {
       slug = `${slug}-${nanoid(4)}`
     }
 
+    const now = new Date()
     const [tag] = await db
       .insert(tags)
       .values({
@@ -71,7 +81,9 @@ export const createTag = createServerFn({ method: "POST" })
         name,
         slug,
         color: color || "#6b7280", // gray-500 default
-        createdAt: new Date(),
+        organizationId: auth.organizationId,
+        createdAt: now,
+        updatedAt: now,
       })
       .returning()
 
@@ -80,19 +92,34 @@ export const createTag = createServerFn({ method: "POST" })
 
 // Update tag
 export const updateTag = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: UpdateTagInput }) => {
+  .inputValidator((d: UpdateTagInput) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { id, name, color } = data
     const db = getDb(env.DB)
 
-    const updates: Partial<Tag> = {}
+    // Verify tag belongs to organization
+    const existing = await db.query.tags.findFirst({
+      where: and(eq(tags.id, id), eq(tags.organizationId, auth.organizationId)),
+    })
+
+    if (!existing) {
+      throw new Error("Tag not found")
+    }
+
+    const updates: Partial<Tag> & { updatedAt: Date } = { updatedAt: new Date() }
 
     if (name !== undefined) {
       let slug = slugify(name)
-      // Ensure slug is unique (excluding current tag)
-      const existing = await db.query.tags.findFirst({
-        where: and(eq(tags.slug, slug), sql`${tags.id} != ${id}`),
+      // Ensure slug is unique within organization (excluding current tag)
+      const slugConflict = await db.query.tags.findFirst({
+        where: and(
+          eq(tags.slug, slug),
+          eq(tags.organizationId, auth.organizationId),
+          sql`${tags.id} != ${id}`
+        ),
       })
-      if (existing) {
+      if (slugConflict) {
         slug = `${slug}-${nanoid(4)}`
       }
       updates.name = name
@@ -103,40 +130,59 @@ export const updateTag = createServerFn({ method: "POST" })
       updates.color = color
     }
 
-    if (Object.keys(updates).length === 0) {
+    if (Object.keys(updates).length === 1) {
+      // Only updatedAt was set
       throw new Error("No updates provided")
     }
 
     const [updated] = await db
       .update(tags)
       .set(updates)
-      .where(eq(tags.id, id))
+      .where(and(eq(tags.id, id), eq(tags.organizationId, auth.organizationId)))
       .returning()
-
-    if (!updated) {
-      throw new Error("Tag not found")
-    }
 
     return updated
   })
 
 // Delete tag
 export const deleteTag = createServerFn({ method: "POST" })
-  .handler(async ({ data }: { data: { id: string } }) => {
+  .inputValidator((d: { id: string }) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { id } = data
     const db = getDb(env.DB)
 
+    // Verify tag belongs to organization
+    const existing = await db.query.tags.findFirst({
+      where: and(eq(tags.id, id), eq(tags.organizationId, auth.organizationId)),
+    })
+
+    if (!existing) {
+      throw new Error("Tag not found")
+    }
+
     // asset_tags entries will be deleted due to ON DELETE CASCADE
-    await db.delete(tags).where(eq(tags.id, id))
+    await db.delete(tags).where(and(eq(tags.id, id), eq(tags.organizationId, auth.organizationId)))
 
     return { success: true, id }
   })
 
 // Get tags for an asset
 export const getAssetTags = createServerFn({ method: "GET" })
-  .handler(async ({ data }: { data: { assetId: string } }) => {
+  .inputValidator((d: { assetId: string }) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { assetId } = data
     const db = getDb(env.DB)
+
+    // Verify asset belongs to organization
+    const asset = await db.query.assets.findFirst({
+      where: and(eq(assets.id, assetId), eq(assets.organizationId, auth.organizationId)),
+    })
+
+    if (!asset) {
+      throw new Error("Asset not found")
+    }
 
     const assetTagRecords = await db
       .select({ tag: tags })

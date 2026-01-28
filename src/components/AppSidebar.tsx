@@ -2,7 +2,6 @@ import { Link, useLocation } from "@tanstack/react-router"
 import { useState, useEffect } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  Image01Icon,
   Upload04Icon,
   FolderOpenIcon,
   Tag01Icon,
@@ -10,7 +9,6 @@ import {
   Settings01Icon,
   GridViewIcon,
   Add01Icon,
-  ArrowRight01Icon,
 } from "@hugeicons/core-free-icons"
 
 import { getFolderTree } from "@/lib/server/folders"
@@ -34,6 +32,8 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar"
 import { CreateFolderDialog } from "@/components/dialogs/CreateFolderDialog"
+import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher"
+import { UserMenu } from "@/components/UserMenu"
 
 const navItems = [
   {
@@ -68,7 +68,6 @@ function FolderTreeItem({
   const location = useLocation()
   const isActive = location.pathname === `/folder/${folder.slug}`
   const hasChildren = folder.children.length > 0
-  const [isOpen, setIsOpen] = useState(false)
 
   if (level === 0) {
     return (
@@ -116,7 +115,7 @@ export function AppSidebar() {
       const tree = await getFolderTree()
       setFolders(tree)
     } catch {
-      // Ignore errors on initial load
+      // Ignore errors on initial load (e.g., not authenticated yet)
     }
   }
 
@@ -128,12 +127,11 @@ export function AppSidebar() {
     <>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2 px-2 py-1">
-            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <HugeiconsIcon icon={Image01Icon} className="h-5 w-5" strokeWidth={2} />
-            </div>
-            <span className="font-semibold text-lg">Archiv</span>
-          </div>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <WorkspaceSwitcher />
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarHeader>
 
         <SidebarContent>
@@ -207,6 +205,9 @@ export function AppSidebar() {
                   <span>Settings</span>
                 </Link>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <UserMenu />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>

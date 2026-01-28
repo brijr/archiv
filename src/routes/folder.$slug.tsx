@@ -128,7 +128,7 @@ function FolderPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" asChild>
-            <Link to={folder.parent ? `/folder/${folder.parent.slug}` : "/"}>
+            <Link to={folder.parent ? "/folder/$slug" : "/"} params={folder.parent ? { slug: folder.parent.slug } : undefined}>
               <HugeiconsIcon icon={ArrowLeft01Icon} className="h-5 w-5" strokeWidth={2} />
             </Link>
           </Button>
@@ -156,7 +156,7 @@ function FolderPage() {
             All Assets
           </Link>
           <span>/</span>
-          <Link to={`/folder/${folder.parent.slug}`} className="hover:underline">
+          <Link to="/folder/$slug" params={{ slug: folder.parent.slug }} className="hover:underline">
             {folder.parent.name}
           </Link>
           <span>/</span>

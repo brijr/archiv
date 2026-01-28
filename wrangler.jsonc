@@ -28,9 +28,17 @@
 			"bucket_name": "archiv-assets"
 		}
 	],
+	// KV Namespace for auth sessions
+	"kv_namespaces": [
+		{
+			"binding": "AUTH_KV",
+			"id": "8e077723d7db4f9e8dc2d9b0591695c0"
+		}
+	],
 	// Environment Variables
 	"vars": {
-		"CDN_DOMAIN": "cdn.archiv.xyz"
+		"CDN_DOMAIN": "cdn.archiv.xyz",
+		"BETTER_AUTH_URL": "https://archiv.brijr.workers.dev"
 	}
 	/**
 	 * Smart Placement

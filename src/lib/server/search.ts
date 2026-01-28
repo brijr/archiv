@@ -1,14 +1,17 @@
 import { createServerFn } from "@tanstack/react-start"
-import { sql, desc } from "drizzle-orm"
+import { sql, desc, and, eq } from "drizzle-orm"
 import { env } from "cloudflare:workers"
 
 import { getDb } from "@/lib/db"
 import { assets } from "@/db/schema"
 import { getCdnUrl } from "@/lib/r2"
+import { getAuthContext } from "./auth-helpers"
 
 // Search assets by filename, alt text, and description
 export const searchAssets = createServerFn({ method: "GET" })
-  .handler(async ({ data }: { data: { query: string; limit?: number } }) => {
+  .inputValidator((d: { query: string; limit?: number }) => d)
+  .handler(async ({ data }) => {
+    const auth = getAuthContext()
     const { query, limit = 50 } = data
     const db = getDb(env.DB)
 
@@ -22,11 +25,14 @@ export const searchAssets = createServerFn({ method: "GET" })
       .select()
       .from(assets)
       .where(
-        sql`(
-          ${assets.filename} LIKE ${searchTerm}
-          OR ${assets.altText} LIKE ${searchTerm}
-          OR ${assets.description} LIKE ${searchTerm}
-        )`
+        and(
+          eq(assets.organizationId, auth.organizationId),
+          sql`(
+            ${assets.filename} LIKE ${searchTerm}
+            OR ${assets.altText} LIKE ${searchTerm}
+            OR ${assets.description} LIKE ${searchTerm}
+          )`
+        )
       )
       .orderBy(desc(assets.createdAt))
       .limit(limit)
