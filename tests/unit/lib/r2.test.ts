@@ -15,35 +15,37 @@ vi.mock('nanoid', () => ({
 }))
 
 describe('generateR2Key', () => {
-  it('should generate key with nanoid prefix', () => {
-    const key = generateR2Key('my-photo.jpg')
-    expect(key).toBe('test12nanoid-my-photo.jpg')
+  const orgId = 'test-org'
+
+  it('should generate key with org prefix and nanoid', () => {
+    const key = generateR2Key('my-photo.jpg', orgId)
+    expect(key).toBe('test-org/test12nanoid-my-photo.jpg')
   })
 
   it('should slugify filename', () => {
-    const key = generateR2Key('My Photo Name.PNG')
-    expect(key).toBe('test12nanoid-my-photo-name.png')
+    const key = generateR2Key('My Photo Name.PNG', orgId)
+    expect(key).toBe('test-org/test12nanoid-my-photo-name.png')
   })
 
   it('should handle files without extension', () => {
-    const key = generateR2Key('README')
+    const key = generateR2Key('README', orgId)
     // Without a dot, the whole filename is treated as the extension
-    expect(key).toBe('test12nanoid-readme.readme')
+    expect(key).toBe('test-org/test12nanoid-readme.readme')
   })
 
   it('should handle files with special characters', () => {
-    const key = generateR2Key('My File (1).jpg')
-    expect(key).toBe('test12nanoid-my-file-1.jpg')
+    const key = generateR2Key('My File (1).jpg', orgId)
+    expect(key).toBe('test-org/test12nanoid-my-file-1.jpg')
   })
 
   it('should handle uppercase extensions', () => {
-    const key = generateR2Key('photo.JPEG')
-    expect(key).toBe('test12nanoid-photo.jpeg')
+    const key = generateR2Key('photo.JPEG', orgId)
+    expect(key).toBe('test-org/test12nanoid-photo.jpeg')
   })
 
   it('should handle multiple dots in filename', () => {
-    const key = generateR2Key('photo.backup.jpg')
-    expect(key).toBe('test12nanoid-photobackup.jpg')
+    const key = generateR2Key('photo.backup.jpg', orgId)
+    expect(key).toBe('test-org/test12nanoid-photobackup.jpg')
   })
 })
 

@@ -2,13 +2,94 @@ import Database from 'better-sqlite3'
 
 // SQL to create the schema (matching src/db/schema.ts)
 const SCHEMA_SQL = `
-CREATE TABLE IF NOT EXISTS folders (
+-- Better Auth tables
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  email_verified INTEGER DEFAULT 0,
+  image TEXT,
+  created_at INTEGER DEFAULT (unixepoch()),
+  updated_at INTEGER DEFAULT (unixepoch())
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id TEXT PRIMARY KEY,
+  token TEXT NOT NULL UNIQUE,
+  expires_at INTEGER NOT NULL,
+  ip_address TEXT,
+  user_agent TEXT,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  active_organization_id TEXT,
+  created_at INTEGER DEFAULT (unixepoch()),
+  updated_at INTEGER DEFAULT (unixepoch())
+);
+
+CREATE TABLE IF NOT EXISTS accounts (
+  id TEXT PRIMARY KEY,
+  account_id TEXT NOT NULL,
+  provider_id TEXT NOT NULL,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  access_token TEXT,
+  refresh_token TEXT,
+  access_token_expires_at INTEGER,
+  refresh_token_expires_at INTEGER,
+  scope TEXT,
+  id_token TEXT,
+  password TEXT,
+  created_at INTEGER DEFAULT (unixepoch()),
+  updated_at INTEGER DEFAULT (unixepoch())
+);
+
+CREATE TABLE IF NOT EXISTS verifications (
+  id TEXT PRIMARY KEY,
+  identifier TEXT NOT NULL,
+  value TEXT NOT NULL,
+  expires_at INTEGER NOT NULL,
+  created_at INTEGER DEFAULT (unixepoch()),
+  updated_at INTEGER DEFAULT (unixepoch())
+);
+
+CREATE TABLE IF NOT EXISTS organizations (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   slug TEXT NOT NULL UNIQUE,
-  parent_id TEXT REFERENCES folders(id) ON DELETE CASCADE,
-  created_at TEXT DEFAULT (datetime('now'))
+  logo TEXT,
+  metadata TEXT,
+  created_at INTEGER DEFAULT (unixepoch())
 );
+
+CREATE TABLE IF NOT EXISTS members (
+  id TEXT PRIMARY KEY,
+  organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL DEFAULT 'member',
+  created_at INTEGER DEFAULT (unixepoch())
+);
+
+CREATE TABLE IF NOT EXISTS invitations (
+  id TEXT PRIMARY KEY,
+  organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'member',
+  status TEXT NOT NULL DEFAULT 'pending',
+  expires_at INTEGER NOT NULL,
+  inviter_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at INTEGER DEFAULT (unixepoch())
+);
+
+-- Application tables with multi-tenancy
+CREATE TABLE IF NOT EXISTS folders (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  parent_id TEXT REFERENCES folders(id) ON DELETE CASCADE,
+  organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  created_at INTEGER DEFAULT (unixepoch())
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS folders_org_slug_idx ON folders(organization_id, slug);
+CREATE INDEX IF NOT EXISTS folders_org_idx ON folders(organization_id);
 
 CREATE TABLE IF NOT EXISTS assets (
   id TEXT PRIMARY KEY,
@@ -21,17 +102,27 @@ CREATE TABLE IF NOT EXISTS assets (
   alt_text TEXT,
   description TEXT,
   folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL,
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
+  organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  created_at INTEGER DEFAULT (unixepoch()),
+  updated_at INTEGER DEFAULT (unixepoch())
 );
+
+CREATE INDEX IF NOT EXISTS assets_org_idx ON assets(organization_id);
+CREATE INDEX IF NOT EXISTS assets_org_folder_idx ON assets(organization_id, folder_id);
 
 CREATE TABLE IF NOT EXISTS tags (
   id TEXT PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE,
-  slug TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL,
   color TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
+  organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  created_at INTEGER DEFAULT (unixepoch()),
+  updated_at INTEGER DEFAULT (unixepoch())
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS tags_org_name_idx ON tags(organization_id, name);
+CREATE UNIQUE INDEX IF NOT EXISTS tags_org_slug_idx ON tags(organization_id, slug);
+CREATE INDEX IF NOT EXISTS tags_org_idx ON tags(organization_id);
 
 CREATE TABLE IF NOT EXISTS asset_tags (
   asset_id TEXT NOT NULL REFERENCES assets(id) ON DELETE CASCADE,
@@ -45,9 +136,12 @@ CREATE TABLE IF NOT EXISTS api_keys (
   key_hash TEXT NOT NULL,
   key_prefix TEXT NOT NULL,
   scopes TEXT DEFAULT '["read"]',
-  last_used_at TEXT,
-  created_at TEXT DEFAULT (datetime('now'))
+  organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  last_used_at INTEGER,
+  created_at INTEGER DEFAULT (unixepoch())
 );
+
+CREATE INDEX IF NOT EXISTS api_keys_org_idx ON api_keys(organization_id);
 `
 
 interface D1Result<T = unknown> {
@@ -171,6 +265,19 @@ export function createMockD1Database() {
         DELETE FROM folders;
         DELETE FROM tags;
         DELETE FROM api_keys;
+        DELETE FROM invitations;
+        DELETE FROM members;
+        DELETE FROM sessions;
+        DELETE FROM accounts;
+        DELETE FROM organizations;
+        DELETE FROM users;
+        DELETE FROM verifications;
+      `)
+      // Insert test organization for tests
+      db.exec(`
+        INSERT INTO organizations (id, name, slug) VALUES ('test-org', 'Test Organization', 'test-org');
+        INSERT INTO users (id, name, email) VALUES ('test-user', 'Test User', 'test@example.com');
+        INSERT INTO members (id, organization_id, user_id, role) VALUES ('test-member', 'test-org', 'test-user', 'owner');
       `)
     },
   }

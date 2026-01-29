@@ -24,13 +24,13 @@ describe('Tag Server Functions', () => {
       const db = getDb(env.DB)
 
       await db.insert(tags).values([
-        { id: 'tag1', name: 'Featured', slug: 'featured', color: '#ff0000', createdAt: new Date(), updatedAt: new Date() },
-        { id: 'tag2', name: 'Archive', slug: 'archive', color: '#00ff00', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'tag1', name: 'Featured', slug: 'featured', color: '#ff0000', organizationId: 'test-org', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'tag2', name: 'Archive', slug: 'archive', color: '#00ff00', organizationId: 'test-org', createdAt: new Date(), updatedAt: new Date() },
       ])
 
       await db.insert(assets).values([
-        { id: 'a1', filename: 'a1.png', r2Key: 'test/a1.png', mimeType: 'image/png', size: 100, folderId: null, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'a2', filename: 'a2.png', r2Key: 'test/a2.png', mimeType: 'image/png', size: 100, folderId: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 'a1', filename: 'a1.png', r2Key: 'test/a1.png', mimeType: 'image/png', size: 100, folderId: null, organizationId: 'test-org', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'a2', filename: 'a2.png', r2Key: 'test/a2.png', mimeType: 'image/png', size: 100, folderId: null, organizationId: 'test-org', createdAt: new Date(), updatedAt: new Date() },
       ])
 
       await db.insert(assetTags).values([
@@ -64,6 +64,7 @@ describe('Tag Server Functions', () => {
         name: 'Get Me',
         slug: 'get-me',
         color: '#ff0000',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -116,6 +117,7 @@ describe('Tag Server Functions', () => {
         name: 'Original',
         slug: 'original',
         color: '#ff0000',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -134,6 +136,7 @@ describe('Tag Server Functions', () => {
         name: 'Color',
         slug: 'color',
         color: '#ff0000',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -158,6 +161,7 @@ describe('Tag Server Functions', () => {
         name: 'No Update',
         slug: 'no-update',
         color: '#ff0000',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -177,6 +181,7 @@ describe('Tag Server Functions', () => {
         name: 'Delete Me',
         slug: 'delete-me',
         color: '#ff0000',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -199,6 +204,7 @@ describe('Tag Server Functions', () => {
         name: 'Cascade',
         slug: 'cascade',
         color: '#ff0000',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -210,6 +216,7 @@ describe('Tag Server Functions', () => {
         mimeType: 'image/png',
         size: 100,
         folderId: null,
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -231,8 +238,8 @@ describe('Tag Server Functions', () => {
       const db = getDb(env.DB)
 
       await db.insert(tags).values([
-        { id: 'asset-tag-1', name: 'Tag 1', slug: 'tag-1', color: '#ff0000', createdAt: new Date(), updatedAt: new Date() },
-        { id: 'asset-tag-2', name: 'Tag 2', slug: 'tag-2', color: '#00ff00', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'asset-tag-1', name: 'Tag 1', slug: 'tag-1', color: '#ff0000', organizationId: 'test-org', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'asset-tag-2', name: 'Tag 2', slug: 'tag-2', color: '#00ff00', organizationId: 'test-org', createdAt: new Date(), updatedAt: new Date() },
       ])
 
       await db.insert(assets).values({
@@ -242,6 +249,7 @@ describe('Tag Server Functions', () => {
         mimeType: 'image/png',
         size: 100,
         folderId: null,
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -267,6 +275,7 @@ describe('Tag Server Functions', () => {
         mimeType: 'image/png',
         size: 100,
         folderId: null,
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })

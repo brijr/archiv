@@ -54,9 +54,7 @@ describe('Asset Server Functions', () => {
         slug: 'test-folder',
         parentId: null,
         organizationId: 'test-org',
-        organizationId: 'test-org',
         createdAt: new Date(),
-        updatedAt: new Date(),
       })
 
       const file = new File(['test'], 'test.png', { type: 'image/png' })
@@ -133,9 +131,7 @@ describe('Asset Server Functions', () => {
         slug: 'filter-folder',
         parentId: null,
         organizationId: 'test-org',
-        organizationId: 'test-org',
         createdAt: new Date(),
-        updatedAt: new Date(),
       })
 
       await db.insert(assets).values({
@@ -350,9 +346,7 @@ describe('Asset Server Functions', () => {
         slug: 'target',
         parentId: null,
         organizationId: 'test-org',
-        organizationId: 'test-org',
         createdAt: new Date(),
-        updatedAt: new Date(),
       })
 
       await db.insert(assets).values([
@@ -409,9 +403,9 @@ describe('Asset Server Functions', () => {
       })
 
       await db.insert(tags).values([
-        { id: 'tag-a', name: 'Tag A', slug: 'tag-a', color: '#ff0000', createdAt: new Date(), updatedAt: new Date() },
-        { id: 'tag-b', name: 'Tag B', slug: 'tag-b', color: '#00ff00', createdAt: new Date(), updatedAt: new Date() },
-        { id: 'tag-c', name: 'Tag C', slug: 'tag-c', color: '#0000ff', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'tag-a', name: 'Tag A', slug: 'tag-a', color: '#ff0000', organizationId: 'test-org', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'tag-b', name: 'Tag B', slug: 'tag-b', color: '#00ff00', organizationId: 'test-org', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'tag-c', name: 'Tag C', slug: 'tag-c', color: '#0000ff', organizationId: 'test-org', createdAt: new Date(), updatedAt: new Date() },
       ])
 
       // Add initial tag
@@ -514,9 +508,7 @@ describe('Asset Server Functions', () => {
         slug: 'stats',
         parentId: null,
         organizationId: 'test-org',
-        organizationId: 'test-org',
         createdAt: new Date(),
-        updatedAt: new Date(),
       })
 
       await db.insert(tags).values({

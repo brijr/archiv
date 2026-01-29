@@ -18,11 +18,32 @@ vi.mock('@tanstack/react-router', async (importOriginal) => {
 // This allows us to test server functions without HTTP middleware
 vi.mock('@tanstack/react-start', () => ({
   createServerFn: ({ method }: { method: string }) => ({
+    inputValidator: (validator: Function) => ({
+      handler: (fn: Function) => {
+        // Return a function that directly calls the handler with validated data
+        const serverFn = async (args: any) => fn({ data: args?.data })
+        return serverFn
+      },
+    }),
     handler: (fn: Function) => {
-      // Return a function that directly calls the handler
-      const serverFn = async (args: any) => fn(args)
+      // Return a function that directly calls the handler (no input validator)
+      const serverFn = async (args: any) => fn({ data: args?.data })
       return serverFn
     },
+  }),
+}))
+
+// Mock getAuthContext to return test org context
+vi.mock('@/lib/server/auth-helpers', () => ({
+  getAuthContext: vi.fn().mockResolvedValue({
+    userId: 'test-user',
+    organizationId: 'test-org',
+    role: 'owner',
+  }),
+  getAuthContextOptional: vi.fn().mockResolvedValue({
+    userId: 'test-user',
+    organizationId: 'test-org',
+    role: 'owner',
   }),
 }))
 

@@ -25,9 +25,9 @@ describe('Folder Server Functions', () => {
       const db = getDb(env.DB)
 
       await db.insert(folders).values([
-        { id: 'f1', name: 'Zebra', slug: 'zebra', parentId: null, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'f2', name: 'Alpha', slug: 'alpha', parentId: null, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'f3', name: 'Beta', slug: 'beta', parentId: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 'f1', name: 'Zebra', slug: 'zebra', parentId: null, organizationId: 'test-org', createdAt: new Date() },
+        { id: 'f2', name: 'Alpha', slug: 'alpha', parentId: null, organizationId: 'test-org', createdAt: new Date() },
+        { id: 'f3', name: 'Beta', slug: 'beta', parentId: null, organizationId: 'test-org', createdAt: new Date() },
       ])
 
       const result = await getFolders()
@@ -49,10 +49,10 @@ describe('Folder Server Functions', () => {
       const db = getDb(env.DB)
 
       await db.insert(folders).values([
-        { id: 'root1', name: 'Root 1', slug: 'root-1', parentId: null, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'root2', name: 'Root 2', slug: 'root-2', parentId: null, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'child1', name: 'Child 1', slug: 'child-1', parentId: 'root1', createdAt: new Date(), updatedAt: new Date() },
-        { id: 'grandchild', name: 'Grandchild', slug: 'grandchild', parentId: 'child1', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'root1', name: 'Root 1', slug: 'root-1', parentId: null, organizationId: 'test-org', createdAt: new Date() },
+        { id: 'root2', name: 'Root 2', slug: 'root-2', parentId: null, organizationId: 'test-org', createdAt: new Date() },
+        { id: 'child1', name: 'Child 1', slug: 'child-1', parentId: 'root1', organizationId: 'test-org', createdAt: new Date() },
+        { id: 'grandchild', name: 'Grandchild', slug: 'grandchild', parentId: 'child1', organizationId: 'test-org', createdAt: new Date() },
       ])
 
       const result = await getFolderTree()
@@ -71,8 +71,8 @@ describe('Folder Server Functions', () => {
       const db = getDb(env.DB)
 
       await db.insert(folders).values([
-        { id: 'main', name: 'Main', slug: 'main', parentId: null, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'sub', name: 'Subfolder', slug: 'subfolder', parentId: 'main', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'main', name: 'Main', slug: 'main', parentId: null, organizationId: 'test-org', createdAt: new Date() },
+        { id: 'sub', name: 'Subfolder', slug: 'subfolder', parentId: 'main', organizationId: 'test-org', createdAt: new Date() },
       ])
 
       await db.insert(assets).values({
@@ -82,6 +82,7 @@ describe('Folder Server Functions', () => {
         mimeType: 'image/png',
         size: 100,
         folderId: 'main',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -100,8 +101,8 @@ describe('Folder Server Functions', () => {
       const db = getDb(env.DB)
 
       await db.insert(folders).values([
-        { id: 'parent', name: 'Parent', slug: 'parent', parentId: null, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'child', name: 'Child', slug: 'child', parentId: 'parent', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'parent', name: 'Parent', slug: 'parent', parentId: null, organizationId: 'test-org', createdAt: new Date() },
+        { id: 'child', name: 'Child', slug: 'child', parentId: 'parent', organizationId: 'test-org', createdAt: new Date() },
       ])
 
       const result = await getFolder({ data: { slug: 'child' } })
@@ -132,8 +133,8 @@ describe('Folder Server Functions', () => {
         name: 'Parent',
         slug: 'parent',
         parentId: null,
+        organizationId: 'test-org',
         createdAt: new Date(),
-        updatedAt: new Date(),
       })
 
       const result = await createFolder({ data: { name: 'Child', parentId: 'parent-folder' } })
@@ -159,8 +160,8 @@ describe('Folder Server Functions', () => {
         name: 'Original',
         slug: 'original',
         parentId: null,
+        organizationId: 'test-org',
         createdAt: new Date(),
-        updatedAt: new Date(),
       })
 
       const result = await updateFolder({ data: { id: 'update-folder', name: 'Updated Name' } })
@@ -185,8 +186,8 @@ describe('Folder Server Functions', () => {
         name: 'Delete Me',
         slug: 'delete-me',
         parentId: null,
+        organizationId: 'test-org',
         createdAt: new Date(),
-        updatedAt: new Date(),
       })
 
       const result = await deleteFolder({ data: { id: 'delete-folder' } })
@@ -207,8 +208,8 @@ describe('Folder Server Functions', () => {
         name: 'Cascade',
         slug: 'cascade',
         parentId: null,
+        organizationId: 'test-org',
         createdAt: new Date(),
-        updatedAt: new Date(),
       })
 
       await db.insert(assets).values({
@@ -218,6 +219,7 @@ describe('Folder Server Functions', () => {
         mimeType: 'image/png',
         size: 100,
         folderId: 'cascade-folder',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -237,15 +239,15 @@ describe('Folder Server Functions', () => {
       const db = getDb(env.DB)
 
       await db.insert(folders).values([
-        { id: 'count-1', name: 'Folder 1', slug: 'folder-1', parentId: null, createdAt: new Date(), updatedAt: new Date() },
-        { id: 'count-2', name: 'Folder 2', slug: 'folder-2', parentId: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 'count-1', name: 'Folder 1', slug: 'folder-1', parentId: null, organizationId: 'test-org', createdAt: new Date() },
+        { id: 'count-2', name: 'Folder 2', slug: 'folder-2', parentId: null, organizationId: 'test-org', createdAt: new Date() },
       ])
 
       await db.insert(assets).values([
-        { id: 'a1', filename: 'a1.png', r2Key: 'test/a1.png', mimeType: 'image/png', size: 100, folderId: 'count-1', createdAt: new Date(), updatedAt: new Date() },
-        { id: 'a2', filename: 'a2.png', r2Key: 'test/a2.png', mimeType: 'image/png', size: 100, folderId: 'count-1', createdAt: new Date(), updatedAt: new Date() },
-        { id: 'a3', filename: 'a3.png', r2Key: 'test/a3.png', mimeType: 'image/png', size: 100, folderId: 'count-2', createdAt: new Date(), updatedAt: new Date() },
-        { id: 'a4', filename: 'a4.png', r2Key: 'test/a4.png', mimeType: 'image/png', size: 100, folderId: null, createdAt: new Date(), updatedAt: new Date() },
+        { id: 'a1', filename: 'a1.png', r2Key: 'test/a1.png', mimeType: 'image/png', size: 100, folderId: 'count-1', organizationId: 'test-org', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'a2', filename: 'a2.png', r2Key: 'test/a2.png', mimeType: 'image/png', size: 100, folderId: 'count-1', organizationId: 'test-org', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'a3', filename: 'a3.png', r2Key: 'test/a3.png', mimeType: 'image/png', size: 100, folderId: 'count-2', organizationId: 'test-org', createdAt: new Date(), updatedAt: new Date() },
+        { id: 'a4', filename: 'a4.png', r2Key: 'test/a4.png', mimeType: 'image/png', size: 100, folderId: null, organizationId: 'test-org', createdAt: new Date(), updatedAt: new Date() },
       ])
 
       const result = await getFolderCounts()
