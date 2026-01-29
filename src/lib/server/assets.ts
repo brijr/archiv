@@ -8,6 +8,7 @@ import { generateR2Key, getCdnUrl, deleteR2Object, uploadToR2, getContentType } 
 import { assets, assetTags, tags, folders } from "@/db/schema"
 import type { Asset, AssetWithTags, PaginatedResponse, UpdateAssetInput } from "@/lib/types"
 import { getAuthContext } from "./auth-helpers"
+import { queueEmbedding, deleteAssetVector, deleteAssetVectors } from "./embeddings"
 
 // Upload a file to R2 and create asset record
 export const uploadAsset = createServerFn({ method: "POST" })
@@ -57,6 +58,11 @@ export const uploadAsset = createServerFn({ method: "POST" })
         updatedAt: now,
       })
       .returning()
+
+    // Queue embedding generation (non-blocking)
+    queueEmbedding(id).catch((err) => {
+      console.error(`Failed to queue embedding for ${id}:`, err)
+    })
 
     return {
       ...asset,
@@ -202,6 +208,13 @@ export const updateAsset = createServerFn({ method: "POST" })
       .where(and(eq(assets.id, id), eq(assets.organizationId, auth.organizationId)))
       .returning()
 
+    // Re-embed if text fields changed (affects search)
+    if (altText !== undefined || description !== undefined) {
+      queueEmbedding(id).catch((err) => {
+        console.error(`Failed to queue re-embedding for ${id}:`, err)
+      })
+    }
+
     return {
       ...updated,
       url: getCdnUrl(updated.r2Key, env.CDN_DOMAIN),
@@ -231,6 +244,11 @@ export const deleteAsset = createServerFn({ method: "POST" })
     // Delete from database (asset_tags will cascade)
     await db.delete(assets).where(eq(assets.id, id))
 
+    // Delete vector from Vectorize
+    deleteAssetVector(id).catch((err) => {
+      console.error(`Failed to delete vector for ${id}:`, err)
+    })
+
     return { success: true, id }
   })
 
@@ -257,6 +275,12 @@ export const deleteAssets = createServerFn({ method: "POST" })
     await db.delete(assets).where(
       and(inArray(assets.id, ids), eq(assets.organizationId, auth.organizationId))
     )
+
+    // Delete vectors from Vectorize
+    const deletedIds = assetsToDelete.map((a) => a.id)
+    deleteAssetVectors(deletedIds).catch((err) => {
+      console.error(`Failed to delete vectors:`, err)
+    })
 
     return { success: true, count: assetsToDelete.length }
   })
@@ -334,6 +358,11 @@ export const setAssetTags = createServerFn({ method: "POST" })
       .update(assets)
       .set({ updatedAt: new Date() })
       .where(eq(assets.id, assetId))
+
+    // Re-embed since tags affect embedding text
+    queueEmbedding(assetId).catch((err) => {
+      console.error(`Failed to queue re-embedding for ${assetId}:`, err)
+    })
 
     return { success: true }
   })

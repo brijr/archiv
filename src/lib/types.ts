@@ -79,3 +79,32 @@ export type AssetFilters = {
   mimeType?: string;
   search?: string;
 };
+
+// Embedding status types
+export type EmbeddingStatus = "pending" | "processing" | "completed" | "failed";
+
+// Vector search result
+export type VectorSearchResult = {
+  asset: Asset & { url: string };
+  score: number;
+  matchType: "semantic" | "keyword" | "both";
+};
+
+// Backfill status
+export type BackfillStatus = {
+  total: number;
+  pending: number;
+  processing: number;
+  completed: number;
+  failed: number;
+};
+
+// Vector search input
+export type VectorSearchInput = {
+  query: string;
+  limit?: number;
+  folderId?: string;
+  tagIds?: string[];
+  mimeTypePrefix?: string;
+  minScore?: number;
+};

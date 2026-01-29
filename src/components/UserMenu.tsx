@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Logout03Icon,
   Settings01Icon,
+  Search01Icon,
 } from "@hugeicons/core-free-icons"
 
 import { useSession, signOut } from "@/lib/auth-client"
@@ -93,6 +94,10 @@ export function UserMenu() {
         <DropdownMenuItem onClick={() => navigate({ to: "/settings/workspace" })}>
           <HugeiconsIcon icon={Settings01Icon} className="mr-2 h-4 w-4" strokeWidth={2} />
           Workspace Settings
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate({ to: "/settings/search" })}>
+          <HugeiconsIcon icon={Search01Icon} className="mr-2 h-4 w-4" strokeWidth={2} />
+          Search Settings
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>

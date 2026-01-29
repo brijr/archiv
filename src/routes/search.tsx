@@ -3,12 +3,12 @@ import { useState, useEffect, useCallback } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Search01Icon, Loading03Icon } from "@hugeicons/core-free-icons"
 
-import { searchAssets } from "@/lib/server/search"
+import { hybridSearch } from "@/lib/server/vector-search"
 
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { AssetGrid } from "@/components/AssetGrid"
-import type { Asset, PaginatedResponse } from "@/lib/types"
+import type { Asset, PaginatedResponse, VectorSearchResult } from "@/lib/types"
 
 export const Route = createFileRoute("/search")({
   component: SearchPage,
@@ -23,7 +23,7 @@ function SearchPage() {
   const { q } = Route.useSearch()
   const navigate = useNavigate()
   const [query, setQuery] = useState(q)
-  const [results, setResults] = useState<(Asset & { url: string })[]>([])
+  const [results, setResults] = useState<VectorSearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
 
@@ -36,7 +36,7 @@ function SearchPage() {
 
     setIsSearching(true)
     try {
-      const searchResults = await searchAssets({ data: { query: searchQuery, limit: 100 } })
+      const searchResults = await hybridSearch({ data: { query: searchQuery, limit: 100 } })
       setResults(searchResults)
       setHasSearched(true)
     } finally {
@@ -77,7 +77,7 @@ function SearchPage() {
   // Convert to PaginatedResponse format for AssetGrid
   const assetsResponse: PaginatedResponse<Asset & { url: string }> | null = hasSearched
     ? {
-        data: results,
+        data: results.map((r) => r.asset),
         pagination: {
           page: 1,
           limit: results.length,
@@ -92,7 +92,7 @@ function SearchPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Search</h1>
         <p className="text-muted-foreground mt-1">
-          Search for assets by filename, alt text, or description
+          Semantic search — find assets by meaning, not just keywords
         </p>
       </div>
 
@@ -146,7 +146,7 @@ function SearchPage() {
             </div>
             <CardTitle className="mb-2">Start searching</CardTitle>
             <CardDescription className="text-center mb-4 max-w-sm">
-              Enter a search term to find assets by filename, alt text, or description.
+              Enter a search term to find assets. Try natural language like "blue logo" or "team photo".
             </CardDescription>
           </CardContent>
         </Card>

@@ -17,6 +17,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WorkspaceCreateRouteImport } from './routes/workspace/create'
 import { Route as SettingsWorkspaceRouteImport } from './routes/settings/workspace'
+import { Route as SettingsSearchRouteImport } from './routes/settings/search'
 import { Route as SettingsApiKeysRouteImport } from './routes/settings/api-keys'
 import { Route as FolderSlugRouteImport } from './routes/folder.$slug'
 import { Route as AssetIdRouteImport } from './routes/asset.$id'
@@ -66,6 +67,11 @@ const WorkspaceCreateRoute = WorkspaceCreateRouteImport.update({
 const SettingsWorkspaceRoute = SettingsWorkspaceRouteImport.update({
   id: '/settings/workspace',
   path: '/settings/workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsSearchRoute = SettingsSearchRouteImport.update({
+  id: '/settings/search',
+  path: '/settings/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsApiKeysRoute = SettingsApiKeysRouteImport.update({
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/asset/$id': typeof AssetIdRoute
   '/folder/$slug': typeof FolderSlugRoute
   '/settings/api-keys': typeof SettingsApiKeysRoute
+  '/settings/search': typeof SettingsSearchRoute
   '/settings/workspace': typeof SettingsWorkspaceRoute
   '/workspace/create': typeof WorkspaceCreateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/asset/$id': typeof AssetIdRoute
   '/folder/$slug': typeof FolderSlugRoute
   '/settings/api-keys': typeof SettingsApiKeysRoute
+  '/settings/search': typeof SettingsSearchRoute
   '/settings/workspace': typeof SettingsWorkspaceRoute
   '/workspace/create': typeof WorkspaceCreateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/asset/$id': typeof AssetIdRoute
   '/folder/$slug': typeof FolderSlugRoute
   '/settings/api-keys': typeof SettingsApiKeysRoute
+  '/settings/search': typeof SettingsSearchRoute
   '/settings/workspace': typeof SettingsWorkspaceRoute
   '/workspace/create': typeof WorkspaceCreateRoute
   '/demo/api/names': typeof DemoApiNamesRoute
@@ -192,6 +201,7 @@ export interface FileRouteTypes {
     | '/asset/$id'
     | '/folder/$slug'
     | '/settings/api-keys'
+    | '/settings/search'
     | '/settings/workspace'
     | '/workspace/create'
     | '/demo/api/names'
@@ -212,6 +222,7 @@ export interface FileRouteTypes {
     | '/asset/$id'
     | '/folder/$slug'
     | '/settings/api-keys'
+    | '/settings/search'
     | '/settings/workspace'
     | '/workspace/create'
     | '/demo/api/names'
@@ -232,6 +243,7 @@ export interface FileRouteTypes {
     | '/asset/$id'
     | '/folder/$slug'
     | '/settings/api-keys'
+    | '/settings/search'
     | '/settings/workspace'
     | '/workspace/create'
     | '/demo/api/names'
@@ -253,6 +265,7 @@ export interface RootRouteChildren {
   AssetIdRoute: typeof AssetIdRoute
   FolderSlugRoute: typeof FolderSlugRoute
   SettingsApiKeysRoute: typeof SettingsApiKeysRoute
+  SettingsSearchRoute: typeof SettingsSearchRoute
   SettingsWorkspaceRoute: typeof SettingsWorkspaceRoute
   WorkspaceCreateRoute: typeof WorkspaceCreateRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
@@ -320,6 +333,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/workspace'
       fullPath: '/settings/workspace'
       preLoaderRoute: typeof SettingsWorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/search': {
+      id: '/settings/search'
+      path: '/settings/search'
+      fullPath: '/settings/search'
+      preLoaderRoute: typeof SettingsSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/api-keys': {
@@ -405,6 +425,7 @@ const rootRouteChildren: RootRouteChildren = {
   AssetIdRoute: AssetIdRoute,
   FolderSlugRoute: FolderSlugRoute,
   SettingsApiKeysRoute: SettingsApiKeysRoute,
+  SettingsSearchRoute: SettingsSearchRoute,
   SettingsWorkspaceRoute: SettingsWorkspaceRoute,
   WorkspaceCreateRoute: WorkspaceCreateRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,

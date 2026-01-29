@@ -60,6 +60,13 @@ export function AssetCard({
         to="/asset/$id"
         params={{ id: asset.id }}
         className="block aspect-square bg-muted"
+        draggable="true"
+        onDragStart={(e) => {
+          // Set data for Figma and other apps that accept dropped URLs
+          e.dataTransfer.setData("text/uri-list", asset.url)
+          e.dataTransfer.setData("text/plain", asset.url)
+          e.dataTransfer.effectAllowed = "copy"
+        }}
       >
         {showThumbnail ? (
           <img
@@ -67,6 +74,7 @@ export function AssetCard({
             alt={asset.altText || asset.filename}
             className="h-full w-full object-cover"
             loading="lazy"
+            draggable="false"
           />
         ) : (
           <div className="h-full w-full flex items-center justify-center">

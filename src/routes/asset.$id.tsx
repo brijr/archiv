@@ -163,18 +163,29 @@ function AssetDetailPage() {
         {/* Preview */}
         <Card>
           <CardContent className="p-0">
-            <div className="aspect-square bg-muted flex items-center justify-center rounded-t-lg overflow-hidden">
+            <div
+              className="aspect-square bg-muted flex items-center justify-center rounded-t-lg overflow-hidden cursor-grab active:cursor-grabbing"
+              draggable="true"
+              onDragStart={(e) => {
+                // Set data for Figma and other apps that accept dropped URLs
+                e.dataTransfer.setData("text/uri-list", asset.url)
+                e.dataTransfer.setData("text/plain", asset.url)
+                e.dataTransfer.effectAllowed = "copy"
+              }}
+            >
               {showImagePreview ? (
                 <img
                   src={asset.url}
                   alt={asset.altText || asset.filename}
                   className="max-h-full max-w-full object-contain"
+                  draggable="false"
                 />
               ) : showVideoPreview ? (
                 <video
                   src={asset.url}
                   controls
                   className="max-h-full max-w-full"
+                  draggable="false"
                 />
               ) : (
                 <HugeiconsIcon

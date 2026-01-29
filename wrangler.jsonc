@@ -39,6 +39,33 @@
 	"vars": {
 		"CDN_DOMAIN": "cdn.archiv.xyz",
 		"BETTER_AUTH_URL": "https://archiv.brijr.workers.dev"
+	},
+	// Vectorize Index for semantic search
+	"vectorize": [
+		{
+			"binding": "VECTORIZE",
+			"index_name": "archiv-assets"
+		}
+	],
+	// Workers AI for embedding generation
+	"ai": {
+		"binding": "AI"
+	},
+	// Queue for async embedding jobs
+	"queues": {
+		"producers": [
+			{
+				"binding": "EMBEDDING_QUEUE",
+				"queue": "archiv-embedding-queue"
+			}
+		],
+		"consumers": [
+			{
+				"queue": "archiv-embedding-queue",
+				"max_batch_size": 10,
+				"max_batch_timeout": 30
+			}
+		]
 	}
 	/**
 	 * Smart Placement

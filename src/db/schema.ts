@@ -136,11 +136,16 @@ export const assets = sqliteTable("assets", {
   organizationId: text("organization_id")
     .notNull()
     .references(() => organizations.id, { onDelete: "cascade" }),
+  // Embedding status for semantic search
+  embeddingStatus: text("embedding_status").default("pending"), // "pending" | "processing" | "completed" | "failed"
+  embeddingError: text("embedding_error"), // Error message if failed
+  embeddedAt: integer("embedded_at", { mode: "timestamp" }), // When embedding was completed
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`),
   updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(unixepoch())`),
 }, (table) => [
   index("assets_org_idx").on(table.organizationId),
   index("assets_org_folder_idx").on(table.organizationId, table.folderId),
+  index("assets_embedding_status_idx").on(table.embeddingStatus),
 ]);
 
 // Tags
@@ -190,6 +195,30 @@ export const apiKeys = sqliteTable("api_keys", {
   index("api_keys_org_idx").on(table.organizationId),
 ]);
 
+// Share Links for public asset/folder access (Slack/Notion/external sharing)
+export const shareLinks = sqliteTable("share_links", {
+  id: text("id").primaryKey(), // nanoid
+  token: text("token").notNull().unique(), // Secure random token for URL
+  assetId: text("asset_id").references(() => assets.id, { onDelete: "cascade" }),
+  folderId: text("folder_id").references(() => folders.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  expiresAt: integer("expires_at", { mode: "timestamp" }), // null = never expires
+  allowDownload: integer("allow_download", { mode: "boolean" }).default(true),
+  viewCount: integer("view_count").default(0),
+  maxViews: integer("max_views"), // null = unlimited
+  createdById: text("created_by_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`),
+}, (table) => [
+  index("share_links_token_idx").on(table.token),
+  index("share_links_asset_idx").on(table.assetId),
+  index("share_links_folder_idx").on(table.folderId),
+  index("share_links_org_idx").on(table.organizationId),
+]);
+
 // ============================================================================
 // Type exports
 // ============================================================================
@@ -214,3 +243,5 @@ export type Tag = typeof tags.$inferSelect;
 export type NewTag = typeof tags.$inferInsert;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type NewApiKey = typeof apiKeys.$inferInsert;
+export type ShareLink = typeof shareLinks.$inferSelect;
+export type NewShareLink = typeof shareLinks.$inferInsert;

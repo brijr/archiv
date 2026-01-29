@@ -1,4 +1,5 @@
 import { getAuth } from "@/lib/auth";
+import { handleEmbeddingQueue, type EmbeddingMessage } from "@/lib/queue-handler";
 
 // This is the main worker entry point
 // It intercepts auth API requests and routes them to Better Auth
@@ -16,5 +17,10 @@ export default {
     // This will be imported dynamically to avoid circular dependencies
     const { default: tanstackHandler } = await import("@tanstack/react-start/server-entry");
     return tanstackHandler.fetch(request, env, ctx);
+  },
+
+  // Queue consumer for embedding jobs
+  async queue(batch: MessageBatch<EmbeddingMessage>, env: Env): Promise<void> {
+    await handleEmbeddingQueue(batch, env);
   },
 };
