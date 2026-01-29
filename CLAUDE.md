@@ -5,19 +5,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev          # Start dev server on port 3000
-npm run build        # Build for production
-npm run deploy       # Build + deploy to Cloudflare Workers
+pnpm dev             # Start dev server on port 3000
+pnpm build           # Build for production
+pnpm deploy          # Build + deploy to Cloudflare Workers
 
-npm run test         # Run all tests once
-npm run test:watch   # Run tests in watch mode
-npm run test:ui      # Run tests with Vitest UI
-npm run test:unit    # Run only unit tests
-npm run test:integration  # Run only integration tests
-npm run test:components   # Run only component tests
+pnpm test            # Run all tests once
+pnpm test:watch      # Run tests in watch mode
+pnpm test:ui         # Run tests with Vitest UI
+pnpm test:unit       # Run only unit tests
+pnpm test:integration    # Run only integration tests
+pnpm test:components     # Run only component tests
 
-npm run cf-typegen   # Generate Cloudflare types from wrangler.jsonc
+pnpm cf-typegen      # Generate Cloudflare types from wrangler.jsonc
 ```
+
+### Database Migrations
+
+```bash
+pnpm drizzle-kit generate                    # Generate migration from schema changes
+pnpm drizzle-kit push                        # Push schema to local D1 (dev)
+CLOUDFLARE_ACCOUNT_ID=<id> pnpm wrangler d1 execute archiv-db --remote --file=./drizzle/<migration>.sql  # Apply to prod
+```
+
+Note: D1 doesn't support `DEFAULT (unixepoch())` in ALTER TABLE. Use nullable columns or constant defaults for migrations.
 
 ## Architecture
 

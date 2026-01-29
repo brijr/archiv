@@ -68,6 +68,7 @@ export const organizations = sqliteTable("organizations", {
   logo: text("logo"),
   metadata: text("metadata", { mode: "json" }),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(unixepoch())`),
 });
 
 // Organization Members
