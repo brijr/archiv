@@ -53,6 +53,8 @@ describe('Asset Server Functions', () => {
         name: 'Test Folder',
         slug: 'test-folder',
         parentId: null,
+        organizationId: 'test-org',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -87,7 +89,8 @@ describe('Asset Server Functions', () => {
           mimeType: 'image/png',
           size: 100,
           folderId: null,
-          createdAt: new Date(),
+          organizationId: 'test-org',
+        createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
@@ -97,7 +100,8 @@ describe('Asset Server Functions', () => {
           mimeType: 'image/png',
           size: 200,
           folderId: null,
-          createdAt: new Date(),
+          organizationId: 'test-org',
+        createdAt: new Date(),
           updatedAt: new Date(),
         },
       ])
@@ -128,6 +132,8 @@ describe('Asset Server Functions', () => {
         name: 'Filter Folder',
         slug: 'filter-folder',
         parentId: null,
+        organizationId: 'test-org',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -139,6 +145,7 @@ describe('Asset Server Functions', () => {
         mimeType: 'image/png',
         size: 100,
         folderId: 'filter-folder',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -158,6 +165,7 @@ describe('Asset Server Functions', () => {
         mimeType: 'image/png',
         size: 100,
         folderId: null,
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -180,6 +188,7 @@ describe('Asset Server Functions', () => {
         mimeType: 'image/png',
         size: 100,
         folderId: null,
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -189,6 +198,7 @@ describe('Asset Server Functions', () => {
         name: 'Test Tag',
         slug: 'test-tag',
         color: '#ff0000',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -224,6 +234,7 @@ describe('Asset Server Functions', () => {
         mimeType: 'image/png',
         size: 100,
         folderId: null,
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -262,6 +273,7 @@ describe('Asset Server Functions', () => {
         mimeType: 'image/png',
         size: 100,
         folderId: null,
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -300,7 +312,8 @@ describe('Asset Server Functions', () => {
           mimeType: 'image/png',
           size: 100,
           folderId: null,
-          createdAt: new Date(),
+          organizationId: 'test-org',
+        createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
@@ -310,7 +323,8 @@ describe('Asset Server Functions', () => {
           mimeType: 'image/png',
           size: 100,
           folderId: null,
-          createdAt: new Date(),
+          organizationId: 'test-org',
+        createdAt: new Date(),
           updatedAt: new Date(),
         },
       ])
@@ -335,6 +349,8 @@ describe('Asset Server Functions', () => {
         name: 'Target',
         slug: 'target',
         parentId: null,
+        organizationId: 'test-org',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -347,7 +363,8 @@ describe('Asset Server Functions', () => {
           mimeType: 'image/png',
           size: 100,
           folderId: null,
-          createdAt: new Date(),
+          organizationId: 'test-org',
+        createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
@@ -357,7 +374,8 @@ describe('Asset Server Functions', () => {
           mimeType: 'image/png',
           size: 100,
           folderId: null,
-          createdAt: new Date(),
+          organizationId: 'test-org',
+        createdAt: new Date(),
           updatedAt: new Date(),
         },
       ])
@@ -385,6 +403,7 @@ describe('Asset Server Functions', () => {
         mimeType: 'image/png',
         size: 100,
         folderId: null,
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -421,7 +440,8 @@ describe('Asset Server Functions', () => {
           mimeType: 'image/png',
           size: 100,
           folderId: null,
-          createdAt: new Date(),
+          organizationId: 'test-org',
+        createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
@@ -431,7 +451,8 @@ describe('Asset Server Functions', () => {
           mimeType: 'image/png',
           size: 100,
           folderId: null,
-          createdAt: new Date(),
+          organizationId: 'test-org',
+        createdAt: new Date(),
           updatedAt: new Date(),
         },
       ])
@@ -441,6 +462,7 @@ describe('Asset Server Functions', () => {
         name: 'Bulk Tag',
         slug: 'bulk-tag',
         color: '#ff0000',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -469,7 +491,8 @@ describe('Asset Server Functions', () => {
           mimeType: 'image/png',
           size: 1000,
           folderId: null,
-          createdAt: new Date(),
+          organizationId: 'test-org',
+        createdAt: new Date(),
           updatedAt: new Date(),
         },
         {
@@ -479,7 +502,8 @@ describe('Asset Server Functions', () => {
           mimeType: 'image/png',
           size: 2000,
           folderId: null,
-          createdAt: new Date(),
+          organizationId: 'test-org',
+        createdAt: new Date(),
           updatedAt: new Date(),
         },
       ])
@@ -489,6 +513,8 @@ describe('Asset Server Functions', () => {
         name: 'Stats',
         slug: 'stats',
         parentId: null,
+        organizationId: 'test-org',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })
@@ -498,6 +524,7 @@ describe('Asset Server Functions', () => {
         name: 'Stats',
         slug: 'stats',
         color: '#ff0000',
+        organizationId: 'test-org',
         createdAt: new Date(),
         updatedAt: new Date(),
       })

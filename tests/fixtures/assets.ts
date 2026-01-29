@@ -14,6 +14,7 @@ export function createAsset(overrides: Partial<Asset> = {}): Asset {
     altText: null,
     description: null,
     folderId: null,
+    organizationId: 'test-org',
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

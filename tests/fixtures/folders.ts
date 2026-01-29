@@ -9,6 +9,7 @@ export function createFolder(overrides: Partial<Folder> = {}): Folder {
     name,
     slug: name.toLowerCase().replace(/\s+/g, '-'),
     parentId: null,
+    organizationId: 'test-org',
     createdAt: new Date(),
     ...overrides,
   }

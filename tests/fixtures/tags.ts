@@ -20,7 +20,9 @@ export function createTag(overrides: Partial<Tag> = {}): Tag {
     name,
     slug: name.toLowerCase().replace(/\s+/g, '-'),
     color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    organizationId: 'test-org',
     createdAt: new Date(),
+    updatedAt: new Date(),
     ...overrides,
   }
 }
