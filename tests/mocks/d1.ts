@@ -103,6 +103,9 @@ CREATE TABLE IF NOT EXISTS assets (
   description TEXT,
   folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL,
   organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  embedding_status TEXT DEFAULT 'pending',
+  embedding_error TEXT,
+  embedded_at INTEGER,
   created_at INTEGER DEFAULT (unixepoch()),
   updated_at INTEGER DEFAULT (unixepoch())
 );
@@ -142,6 +145,26 @@ CREATE TABLE IF NOT EXISTS api_keys (
 );
 
 CREATE INDEX IF NOT EXISTS api_keys_org_idx ON api_keys(organization_id);
+
+CREATE TABLE IF NOT EXISTS share_links (
+  id TEXT PRIMARY KEY,
+  token TEXT NOT NULL UNIQUE,
+  asset_id TEXT REFERENCES assets(id) ON DELETE CASCADE,
+  folder_id TEXT REFERENCES folders(id) ON DELETE CASCADE,
+  organization_id TEXT NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+  expires_at INTEGER,
+  allow_download INTEGER DEFAULT 1,
+  view_count INTEGER DEFAULT 0,
+  max_views INTEGER,
+  created_by_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at INTEGER DEFAULT (unixepoch())
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS share_links_token_unique ON share_links(token);
+CREATE INDEX IF NOT EXISTS share_links_token_idx ON share_links(token);
+CREATE INDEX IF NOT EXISTS share_links_asset_idx ON share_links(asset_id);
+CREATE INDEX IF NOT EXISTS share_links_folder_idx ON share_links(folder_id);
+CREATE INDEX IF NOT EXISTS share_links_org_idx ON share_links(organization_id);
 `
 
 interface D1Result<T = unknown> {
