@@ -38,9 +38,9 @@ export const vectorSearch = createServerFn({ method: "GET" })
     // Note: Vectorize doesn't support prefix matching, so mimeTypePrefix
     // filtering is done client-side after the query
 
-    // Query Vectorize
+    // Query Vectorize (max topK is 50 when returnMetadata=true)
     const vectorResults = await env.VECTORIZE.query(queryEmbedding, {
-      topK: limit * 2, // Over-fetch for tag filtering
+      topK: Math.min(limit * 2, 50),
       filter,
       returnMetadata: true,
     })
@@ -127,7 +127,7 @@ export const hybridSearch = createServerFn({ method: "GET" })
         // mimeTypePrefix filtering done client-side
 
         return env.VECTORIZE.query(queryEmbedding, {
-          topK: limit,
+          topK: Math.min(limit, 50), // max 50 when returnMetadata=true
           filter,
           returnMetadata: true,
         })
