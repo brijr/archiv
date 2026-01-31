@@ -50,12 +50,15 @@ export async function generateAssetEmbedding(assetId: string): Promise<void> {
 
       aiCaption = result.caption
 
-      // Save caption to database immediately
+      // Save caption to database and auto-fill altText/description if empty
       await db
         .update(assets)
         .set({
           aiCaption: result.caption,
           aiCaptionModel: result.model,
+          // Auto-fill altText and description if not set by user
+          ...(asset.altText ? {} : { altText: result.caption }),
+          ...(asset.description ? {} : { description: result.caption }),
           updatedAt: new Date(),
         })
         .where(eq(assets.id, assetId))
