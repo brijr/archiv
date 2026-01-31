@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization } from "better-auth/plugins";
 import { createKVStorage } from "better-auth-cloudflare";
 import { getDb } from "./db";
+import * as schema from "@/db/schema";
 
 export type Env = {
   DB: D1Database;
@@ -17,6 +18,15 @@ export function getAuth(env: Env) {
   return betterAuth({
     database: drizzleAdapter(db, {
       provider: "sqlite",
+      schema: {
+        user: schema.users,
+        session: schema.sessions,
+        account: schema.accounts,
+        verification: schema.verifications,
+        organization: schema.organizations,
+        member: schema.members,
+        invitation: schema.invitations,
+      },
     }),
     secondaryStorage: createKVStorage(env.AUTH_KV),
     secret: env.BETTER_AUTH_SECRET,

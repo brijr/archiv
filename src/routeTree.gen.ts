@@ -19,7 +19,9 @@ import { Route as WorkspaceCreateRouteImport } from './routes/workspace/create'
 import { Route as SettingsWorkspaceRouteImport } from './routes/settings/workspace'
 import { Route as SettingsSearchRouteImport } from './routes/settings/search'
 import { Route as SettingsApiKeysRouteImport } from './routes/settings/api-keys'
+import { Route as STokenRouteImport } from './routes/s.$token'
 import { Route as FolderSlugRouteImport } from './routes/folder.$slug'
+import { Route as EmbedTokenRouteImport } from './routes/embed.$token'
 import { Route as AssetIdRouteImport } from './routes/asset.$id'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
@@ -79,9 +81,19 @@ const SettingsApiKeysRoute = SettingsApiKeysRouteImport.update({
   path: '/settings/api-keys',
   getParentRoute: () => rootRouteImport,
 } as any)
+const STokenRoute = STokenRouteImport.update({
+  id: '/s/$token',
+  path: '/s/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FolderSlugRoute = FolderSlugRouteImport.update({
   id: '/folder/$slug',
   path: '/folder/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmbedTokenRoute = EmbedTokenRouteImport.update({
+  id: '/embed/$token',
+  path: '/embed/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AssetIdRoute = AssetIdRouteImport.update({
@@ -133,7 +145,9 @@ export interface FileRoutesByFullPath {
   '/tags': typeof TagsRoute
   '/upload': typeof UploadRoute
   '/asset/$id': typeof AssetIdRoute
+  '/embed/$token': typeof EmbedTokenRoute
   '/folder/$slug': typeof FolderSlugRoute
+  '/s/$token': typeof STokenRoute
   '/settings/api-keys': typeof SettingsApiKeysRoute
   '/settings/search': typeof SettingsSearchRoute
   '/settings/workspace': typeof SettingsWorkspaceRoute
@@ -154,7 +168,9 @@ export interface FileRoutesByTo {
   '/tags': typeof TagsRoute
   '/upload': typeof UploadRoute
   '/asset/$id': typeof AssetIdRoute
+  '/embed/$token': typeof EmbedTokenRoute
   '/folder/$slug': typeof FolderSlugRoute
+  '/s/$token': typeof STokenRoute
   '/settings/api-keys': typeof SettingsApiKeysRoute
   '/settings/search': typeof SettingsSearchRoute
   '/settings/workspace': typeof SettingsWorkspaceRoute
@@ -176,7 +192,9 @@ export interface FileRoutesById {
   '/tags': typeof TagsRoute
   '/upload': typeof UploadRoute
   '/asset/$id': typeof AssetIdRoute
+  '/embed/$token': typeof EmbedTokenRoute
   '/folder/$slug': typeof FolderSlugRoute
+  '/s/$token': typeof STokenRoute
   '/settings/api-keys': typeof SettingsApiKeysRoute
   '/settings/search': typeof SettingsSearchRoute
   '/settings/workspace': typeof SettingsWorkspaceRoute
@@ -199,7 +217,9 @@ export interface FileRouteTypes {
     | '/tags'
     | '/upload'
     | '/asset/$id'
+    | '/embed/$token'
     | '/folder/$slug'
+    | '/s/$token'
     | '/settings/api-keys'
     | '/settings/search'
     | '/settings/workspace'
@@ -220,7 +240,9 @@ export interface FileRouteTypes {
     | '/tags'
     | '/upload'
     | '/asset/$id'
+    | '/embed/$token'
     | '/folder/$slug'
+    | '/s/$token'
     | '/settings/api-keys'
     | '/settings/search'
     | '/settings/workspace'
@@ -241,7 +263,9 @@ export interface FileRouteTypes {
     | '/tags'
     | '/upload'
     | '/asset/$id'
+    | '/embed/$token'
     | '/folder/$slug'
+    | '/s/$token'
     | '/settings/api-keys'
     | '/settings/search'
     | '/settings/workspace'
@@ -263,7 +287,9 @@ export interface RootRouteChildren {
   TagsRoute: typeof TagsRoute
   UploadRoute: typeof UploadRoute
   AssetIdRoute: typeof AssetIdRoute
+  EmbedTokenRoute: typeof EmbedTokenRoute
   FolderSlugRoute: typeof FolderSlugRoute
+  STokenRoute: typeof STokenRoute
   SettingsApiKeysRoute: typeof SettingsApiKeysRoute
   SettingsSearchRoute: typeof SettingsSearchRoute
   SettingsWorkspaceRoute: typeof SettingsWorkspaceRoute
@@ -349,11 +375,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsApiKeysRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/s/$token': {
+      id: '/s/$token'
+      path: '/s/$token'
+      fullPath: '/s/$token'
+      preLoaderRoute: typeof STokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/folder/$slug': {
       id: '/folder/$slug'
       path: '/folder/$slug'
       fullPath: '/folder/$slug'
       preLoaderRoute: typeof FolderSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/embed/$token': {
+      id: '/embed/$token'
+      path: '/embed/$token'
+      fullPath: '/embed/$token'
+      preLoaderRoute: typeof EmbedTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/asset/$id': {
@@ -423,7 +463,9 @@ const rootRouteChildren: RootRouteChildren = {
   TagsRoute: TagsRoute,
   UploadRoute: UploadRoute,
   AssetIdRoute: AssetIdRoute,
+  EmbedTokenRoute: EmbedTokenRoute,
   FolderSlugRoute: FolderSlugRoute,
+  STokenRoute: STokenRoute,
   SettingsApiKeysRoute: SettingsApiKeysRoute,
   SettingsSearchRoute: SettingsSearchRoute,
   SettingsWorkspaceRoute: SettingsWorkspaceRoute,

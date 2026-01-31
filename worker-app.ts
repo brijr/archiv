@@ -9,8 +9,22 @@ export default {
 
     // Handle Better Auth API routes
     if (url.pathname.startsWith("/api/auth")) {
-      const auth = getAuth(env);
-      return auth.handler(request);
+      try {
+        const auth = getAuth(env);
+        return await auth.handler(request);
+      } catch (error) {
+        console.error("Auth error:", error);
+        return new Response(JSON.stringify({ error: String(error) }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Handle oEmbed API for Notion/Slack/etc integrations (dynamic import to avoid bundling issues)
+    if (url.pathname === "/api/v1/oembed") {
+      const { handleOEmbed } = await import("@/lib/api/oembed");
+      return handleOEmbed(request, env);
     }
 
     // For other routes, let TanStack Start handle them

@@ -9,10 +9,13 @@ import {
   FileIcon,
   Video01Icon,
   Pdf01Icon,
+  Share01Icon,
+  Link01Icon,
 } from "@hugeicons/core-free-icons"
 import { toast } from "sonner"
 
 import { getAsset, updateAsset, deleteAsset } from "@/lib/server/assets"
+import { createShareLink } from "@/lib/server/share"
 import { isImage, isVideo } from "@/lib/r2"
 import { formatBytes, formatDate } from "@/lib/utils"
 
@@ -32,6 +35,14 @@ import {
 } from "@/components/ui/dialog"
 import { CopyButton } from "@/components/CopyButton"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 
 export const Route = createFileRoute("/asset/$id")({
   component: AssetDetailPage,
@@ -85,6 +96,15 @@ function AssetDetailPage() {
     description: asset.description || "",
   })
 
+  // Share dialog state
+  const [showShareDialog, setShowShareDialog] = useState(false)
+  const [isCreatingShare, setIsCreatingShare] = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [shareOptions, setShareOptions] = useState({
+    expiresInDays: null as number | null,
+    allowDownload: true,
+  })
+
   const handleSave = async () => {
     setIsSaving(true)
     try {
@@ -115,6 +135,31 @@ function AssetDetailPage() {
     }
   }
 
+  const handleCreateShare = async () => {
+    setIsCreatingShare(true)
+    try {
+      const result = await createShareLink({
+        data: {
+          assetId: asset.id,
+          expiresInDays: shareOptions.expiresInDays,
+          allowDownload: shareOptions.allowDownload,
+        },
+      })
+      setShareUrl(result.shareUrl)
+      toast.success("Share link created")
+    } catch (error) {
+      toast.error("Failed to create share link")
+    } finally {
+      setIsCreatingShare(false)
+    }
+  }
+
+  const handleOpenShareDialog = () => {
+    setShareUrl(null)
+    setShareOptions({ expiresInDays: null, allowDownload: true })
+    setShowShareDialog(true)
+  }
+
   const showImagePreview = isImage(asset.mimeType)
   const showVideoPreview = isVideo(asset.mimeType)
 
@@ -137,6 +182,10 @@ function AssetDetailPage() {
           <h1 className="text-2xl font-bold truncate max-w-md">{asset.filename}</h1>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleOpenShareDialog}>
+            <HugeiconsIcon icon={Share01Icon} className="mr-2 h-4 w-4" strokeWidth={2} />
+            Share
+          </Button>
           <Button variant="outline" asChild>
             <a href={asset.url} target="_blank" rel="noopener noreferrer">
               <HugeiconsIcon icon={ArrowUpRight01Icon} className="mr-2 h-4 w-4" strokeWidth={2} />
@@ -322,6 +371,96 @@ function AssetDetailPage() {
             >
               {isDeleting ? "Deleting..." : "Delete"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Dialog */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share Asset</DialogTitle>
+            <DialogDescription>
+              Create a public link to share "{asset.filename}" with anyone.
+            </DialogDescription>
+          </DialogHeader>
+
+          {shareUrl ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                <HugeiconsIcon icon={Link01Icon} className="h-4 w-4 text-muted-foreground shrink-0" strokeWidth={2} />
+                <Input
+                  value={shareUrl}
+                  readOnly
+                  className="border-0 bg-transparent p-0 h-auto text-sm font-mono focus-visible:ring-0"
+                />
+                <CopyButton value={shareUrl} />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Anyone with this link can view{shareOptions.allowDownload ? " and download" : ""} this asset.
+                {shareOptions.expiresInDays && ` Link expires in ${shareOptions.expiresInDays} days.`}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Link expiration</Label>
+                <Select
+                  value={shareOptions.expiresInDays?.toString() || "never"}
+                  onValueChange={(v) =>
+                    setShareOptions((prev) => ({
+                      ...prev,
+                      expiresInDays: v === "never" ? null : parseInt(v),
+                    }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="never">Never expires</SelectItem>
+                    <SelectItem value="1">1 day</SelectItem>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                    <SelectItem value="90">90 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Allow downloads</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Let viewers download the original file
+                  </p>
+                </div>
+                <Switch
+                  checked={shareOptions.allowDownload}
+                  onCheckedChange={(checked) =>
+                    setShareOptions((prev) => ({ ...prev, allowDownload: checked }))
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            {shareUrl ? (
+              <Button onClick={() => setShowShareDialog(false)}>Done</Button>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowShareDialog(false)}
+                  disabled={isCreatingShare}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateShare} disabled={isCreatingShare}>
+                  {isCreatingShare ? "Creating..." : "Create Link"}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

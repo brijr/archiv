@@ -12,7 +12,7 @@ interface AppLayoutProps {
 }
 
 // Routes that don't require authentication
-const publicRoutes = ["/login", "/register", "/workspace/create"]
+const publicRoutes = ["/login", "/register", "/workspace/create", "/s/", "/embed/"]
 
 function LoadingScreen() {
   return (
