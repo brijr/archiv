@@ -136,6 +136,9 @@ export const assets = sqliteTable("assets", {
   organizationId: text("organization_id")
     .notNull()
     .references(() => organizations.id, { onDelete: "cascade" }),
+  // AI-generated caption for images
+  aiCaption: text("ai_caption"), // AI-generated description of image content
+  aiCaptionModel: text("ai_caption_model"), // Model used (e.g., "@cf/unum/uform-gen2-qwen-500m")
   // Embedding status for semantic search
   embeddingStatus: text("embedding_status").default("pending"), // "pending" | "processing" | "completed" | "failed"
   embeddingError: text("embedding_error"), // Error message if failed

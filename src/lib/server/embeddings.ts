@@ -5,17 +5,19 @@ import { env } from "cloudflare:workers"
 import { getDb } from "@/lib/db"
 import { assets, assetTags, tags } from "@/db/schema"
 import { getAuthContext } from "./auth-helpers"
+import { generateCaption, isCaptionable } from "./captioning"
 
 // Compose text for embedding from asset fields
 export function composeEmbeddingText(
   filename: string,
   altText: string | null,
   description: string | null,
+  aiCaption: string | null,
   tagNames: string[]
 ): string {
   // Clean filename: remove extension, replace separators with spaces
   const cleanFilename = filename.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ")
-  const parts = [cleanFilename, altText, description, tagNames.join(" ")].filter(Boolean)
+  const parts = [cleanFilename, altText, description, aiCaption, tagNames.join(" ")].filter(Boolean)
   return parts.join(" | ")
 }
 
@@ -32,6 +34,38 @@ export async function generateAssetEmbedding(assetId: string): Promise<void> {
     throw new Error(`Asset not found: ${assetId}`)
   }
 
+  let aiCaption: string | null = asset.aiCaption
+
+  // Generate AI caption for images that don't have one yet
+  if (!aiCaption && isCaptionable(asset.mimeType)) {
+    try {
+      // Fetch image from R2
+      const r2Object = await env.BUCKET.get(asset.r2Key)
+      if (!r2Object) {
+        throw new Error(`R2 object not found: ${asset.r2Key}`)
+      }
+
+      const imageData = await r2Object.arrayBuffer()
+      const result = await generateCaption(imageData)
+
+      aiCaption = result.caption
+
+      // Save caption to database immediately
+      await db
+        .update(assets)
+        .set({
+          aiCaption: result.caption,
+          aiCaptionModel: result.model,
+          updatedAt: new Date(),
+        })
+        .where(eq(assets.id, assetId))
+    } catch (captionError) {
+      // Log but don't fail - proceed with embedding without caption
+      console.error(`Caption generation failed for ${assetId}:`, captionError)
+      // aiCaption remains null, embedding proceeds
+    }
+  }
+
   // Get tag names for this asset
   const assetTagRecords = await db
     .select({ name: tags.name, id: tags.id })
@@ -42,8 +76,8 @@ export async function generateAssetEmbedding(assetId: string): Promise<void> {
   const tagNames = assetTagRecords.map((t) => t.name)
   const tagIds = assetTagRecords.map((t) => t.id)
 
-  // Compose text and generate embedding
-  const text = composeEmbeddingText(asset.filename, asset.altText, asset.description, tagNames)
+  // Compose text and generate embedding (including AI caption if available)
+  const text = composeEmbeddingText(asset.filename, asset.altText, asset.description, aiCaption, tagNames)
 
   // Generate embedding using Workers AI
   const embedResult = await env.AI.run("@cf/baai/bge-base-en-v1.5", {
