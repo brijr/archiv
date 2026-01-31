@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { useState } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowLeft01Icon, FolderOpenIcon, Edit02Icon, Delete02Icon } from "@hugeicons/core-free-icons"
+import { ArrowLeft01Icon, FolderOpenIcon, Edit02Icon, Delete02Icon, Share01Icon, Link01Icon, Copy01Icon, Tick01Icon } from "@hugeicons/core-free-icons"
 import { toast } from "sonner"
 
 import { getFolder, updateFolder, deleteFolder } from "@/lib/server/folders"
+import { createShareLink } from "@/lib/server/share"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { AssetGrid } from "@/components/AssetGrid"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { Asset, PaginatedResponse } from "@/lib/types"
@@ -72,8 +74,16 @@ function FolderPage() {
   const navigate = Route.useNavigate()
   const [showRenameDialog, setShowRenameDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showShareDialog, setShowShareDialog] = useState(false)
   const [newName, setNewName] = useState(folder.name)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Share dialog state
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [shareLoading, setShareLoading] = useState(false)
+  const [shareExpiresDays, setShareExpiresDays] = useState<number | null>(null)
+  const [shareAllowDownload, setShareAllowDownload] = useState(true)
+  const [copied, setCopied] = useState(false)
 
   const handleRename = async () => {
     if (!newName.trim()) {
@@ -108,6 +118,34 @@ function FolderPage() {
     }
   }
 
+  const handleCreateShare = async () => {
+    setShareLoading(true)
+    try {
+      const result = await createShareLink({
+        data: {
+          folderId: folder.id,
+          expiresInDays: shareExpiresDays,
+          allowDownload: shareAllowDownload,
+        },
+      })
+      setShareUrl(result.shareUrl)
+      toast.success("Share link created")
+    } catch (error) {
+      toast.error("Failed to create share link")
+    } finally {
+      setShareLoading(false)
+    }
+  }
+
+  const handleCopyShareUrl = () => {
+    if (shareUrl) {
+      navigator.clipboard.writeText(shareUrl)
+      setCopied(true)
+      toast.success("Link copied to clipboard")
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
   // Convert folder assets to PaginatedResponse format for AssetGrid
   const assetsResponse: PaginatedResponse<Asset & { url: string }> = {
     data: folder.assets,
@@ -138,6 +176,10 @@ function FolderPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => { setShareUrl(null); setShowShareDialog(true) }}>
+            <HugeiconsIcon icon={Share01Icon} className="mr-2 h-4 w-4" strokeWidth={2} />
+            Share
+          </Button>
           <Button variant="outline" onClick={() => setShowRenameDialog(true)}>
             <HugeiconsIcon icon={Edit02Icon} className="mr-2 h-4 w-4" strokeWidth={2} />
             Rename
@@ -268,6 +310,74 @@ function FolderPage() {
             >
               {isSubmitting ? "Deleting..." : "Delete"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Dialog */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share Folder</DialogTitle>
+            <DialogDescription>
+              Create a public link to share this folder with anyone.
+            </DialogDescription>
+          </DialogHeader>
+          {shareUrl ? (
+            <div className="space-y-4 py-4">
+              <div className="flex items-center gap-2">
+                <Input value={shareUrl} readOnly className="flex-1" />
+                <Button size="icon" variant="outline" onClick={handleCopyShareUrl}>
+                  <HugeiconsIcon icon={copied ? Tick01Icon : Copy01Icon} className="h-4 w-4" strokeWidth={2} />
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Anyone with this link can view the {folder.assets.length} asset{folder.assets.length !== 1 ? "s" : ""} in this folder.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="expires">Link Expiration</Label>
+                <select
+                  id="expires"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  value={shareExpiresDays ?? "never"}
+                  onChange={(e) =>
+                    setShareExpiresDays(e.target.value === "never" ? null : Number(e.target.value))
+                  }
+                >
+                  <option value="never">Never expires</option>
+                  <option value="1">1 day</option>
+                  <option value="7">7 days</option>
+                  <option value="30">30 days</option>
+                  <option value="90">90 days</option>
+                </select>
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="allow-download">Allow downloads</Label>
+                <Switch
+                  id="allow-download"
+                  checked={shareAllowDownload}
+                  onCheckedChange={setShareAllowDownload}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            {shareUrl ? (
+              <Button onClick={() => setShowShareDialog(false)}>Done</Button>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setShowShareDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateShare} disabled={shareLoading}>
+                  <HugeiconsIcon icon={Link01Icon} className="mr-2 h-4 w-4" strokeWidth={2} />
+                  {shareLoading ? "Creating..." : "Create Link"}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

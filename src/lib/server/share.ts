@@ -44,6 +44,16 @@ export interface ShareLinkWithAsset {
     id: string
     name: string
     slug: string
+    assets: {
+      id: string
+      filename: string
+      mimeType: string
+      size: number
+      width: number | null
+      height: number | null
+      altText: string | null
+      url: string
+    }[]
   } | null
   organization: {
     id: string
@@ -177,10 +187,29 @@ export const getShareByToken = createServerFn({ method: "GET" })
         where: eq(folders.id, shareLink.folderId),
       })
       if (folder) {
+        // Fetch folder assets
+        const folderAssets = await db.query.assets.findMany({
+          where: and(
+            eq(assets.folderId, folder.id),
+            eq(assets.organizationId, shareLink.organizationId)
+          ),
+          orderBy: (assets, { desc }) => [desc(assets.createdAt)],
+        })
+
         folderData = {
           id: folder.id,
           name: folder.name,
           slug: folder.slug,
+          assets: folderAssets.map(asset => ({
+            id: asset.id,
+            filename: asset.filename,
+            mimeType: asset.mimeType,
+            size: asset.size,
+            width: asset.width,
+            height: asset.height,
+            altText: asset.altText,
+            url: getCdnUrl(asset.r2Key, env.CDN_DOMAIN),
+          })),
         }
       }
     }

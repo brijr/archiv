@@ -69,16 +69,37 @@ export const Route = createFileRoute("/s/$token")({
     }
 
     if (folder) {
+      const folderAssets = folder.assets || []
+      const assetCount = folderAssets.length
+      const firstImageAsset = folderAssets.find(a => a.mimeType.startsWith("image/"))
+      const description = `${assetCount} asset${assetCount !== 1 ? "s" : ""} shared from ${share.organization.name}`
+
       return {
         meta: [
           { title: `${folder.name} - Shared Folder via Archiv` },
-          { name: "description", content: `Folder shared from ${share.organization.name} via Archiv` },
+          { name: "description", content: description },
           { property: "og:title", content: folder.name },
-          { property: "og:description", content: `Folder shared from ${share.organization.name}` },
+          { property: "og:description", content: description },
           { property: "og:type", content: "website" },
           { property: "og:site_name", content: "Archiv" },
-          { name: "twitter:card", content: "summary" },
+          ...(firstImageAsset ? [
+            { property: "og:image", content: firstImageAsset.url },
+            { property: "og:image:type", content: firstImageAsset.mimeType },
+            ...(firstImageAsset.width ? [{ property: "og:image:width", content: String(firstImageAsset.width) }] : []),
+            ...(firstImageAsset.height ? [{ property: "og:image:height", content: String(firstImageAsset.height) }] : []),
+          ] : []),
+          { name: "twitter:card", content: firstImageAsset ? "summary_large_image" : "summary" },
           { name: "twitter:title", content: folder.name },
+          { name: "twitter:description", content: description },
+          ...(firstImageAsset ? [{ name: "twitter:image", content: firstImageAsset.url }] : []),
+        ],
+        links: [
+          // oEmbed discovery for Notion and other apps
+          {
+            rel: "alternate",
+            type: "application/json+oembed",
+            href: `/api/v1/oembed?url=${encodeURIComponent(`/s/${share.token}`)}`,
+          },
         ],
       }
     }
@@ -227,9 +248,11 @@ function SharePage() {
   }
 
   if (folder) {
+    const folderAssets = folder.assets || []
+
     return (
       <div className="min-h-screen bg-muted/30 p-4 md:p-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -242,17 +265,90 @@ function SharePage() {
             </div>
           </div>
 
-          <Card>
-            <CardContent className="flex flex-col items-center py-12 text-center">
-              <div className="rounded-full bg-muted p-4 mb-4">
-                <HugeiconsIcon icon={FolderOpenIcon} className="h-8 w-8 text-muted-foreground" strokeWidth={2} />
+          {/* Folder Header */}
+          <Card className="mb-6">
+            <CardContent className="flex items-center gap-4 py-4">
+              <div className="rounded-full bg-muted p-3">
+                <HugeiconsIcon icon={FolderOpenIcon} className="h-6 w-6 text-muted-foreground" strokeWidth={2} />
               </div>
-              <h1 className="text-xl font-semibold mb-2">{folder.name}</h1>
-              <p className="text-muted-foreground">
-                Folder sharing is not yet supported in the public view.
-              </p>
+              <div>
+                <h1 className="text-xl font-semibold">{folder.name}</h1>
+                <p className="text-sm text-muted-foreground">
+                  {folderAssets.length} asset{folderAssets.length !== 1 ? "s" : ""}
+                </p>
+              </div>
             </CardContent>
           </Card>
+
+          {/* Assets Grid */}
+          {folderAssets.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {folderAssets.map((folderAsset) => {
+                const showImage = isImage(folderAsset.mimeType)
+                const showVideo = isVideo(folderAsset.mimeType)
+                const FileIcon = getFileIcon(folderAsset.mimeType)
+
+                return (
+                  <Card key={folderAsset.id} className="overflow-hidden group">
+                    {/* Thumbnail */}
+                    <div className="aspect-square bg-muted flex items-center justify-center relative">
+                      {showImage ? (
+                        <img
+                          src={folderAsset.url}
+                          alt={folderAsset.altText || folderAsset.filename}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : showVideo ? (
+                        <video
+                          src={folderAsset.url}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <HugeiconsIcon
+                          icon={FileIcon}
+                          className="h-12 w-12 text-muted-foreground"
+                          strokeWidth={1.5}
+                        />
+                      )}
+                      {/* Hover overlay with actions */}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <Button size="sm" variant="secondary" asChild>
+                          <a href={folderAsset.url} target="_blank" rel="noopener noreferrer">
+                            <HugeiconsIcon icon={ArrowUpRight01Icon} className="h-4 w-4" strokeWidth={2} />
+                          </a>
+                        </Button>
+                        {share.allowDownload && (
+                          <Button size="sm" variant="secondary" asChild>
+                            <a href={folderAsset.url} download={folderAsset.filename}>
+                              <HugeiconsIcon icon={Download04Icon} className="h-4 w-4" strokeWidth={2} />
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    {/* Info */}
+                    <CardContent className="p-3">
+                      <p className="text-sm font-medium truncate" title={folderAsset.filename}>
+                        {folderAsset.filename}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatBytes(folderAsset.size)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center py-12 text-center">
+                <div className="rounded-full bg-muted p-4 mb-4">
+                  <HugeiconsIcon icon={FolderOpenIcon} className="h-8 w-8 text-muted-foreground" strokeWidth={2} />
+                </div>
+                <p className="text-muted-foreground">This folder is empty.</p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Footer */}
           <div className="mt-6 text-center text-sm text-muted-foreground">
