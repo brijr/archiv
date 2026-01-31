@@ -87,10 +87,28 @@ import { getAuthContext } from "@/lib/server/auth-helpers";
 ```
 
 ### Cloudflare Bindings
-Access in server functions via `getCloudflareContext()`:
+Access via `import { env } from "cloudflare:workers"`:
 - `env.DB` - D1 database
 - `env.BUCKET` - R2 storage bucket
 - `env.AUTH_KV` - KV namespace for session cache
+- `env.VECTORIZE` - Vectorize index for semantic search
+- `env.AI` - Workers AI for embedding generation
+- `env.EMBEDDING_QUEUE` - Queue for async embedding jobs
+
+### Semantic Search Architecture
+Assets are embedded for vector search using `@cf/baai/bge-base-en-v1.5`. The flow:
+1. Asset upload → `queueEmbedding()` sends message to `EMBEDDING_QUEUE`
+2. Queue consumer in `worker-app.ts` calls `generateAssetEmbedding()`
+3. Embedding text composed from: filename, altText, description, tags
+4. Vector stored in Vectorize with metadata (organizationId, folderId, mimeType)
+5. `embeddingStatus` field tracks: "pending" → "processing" → "completed" | "failed"
+
+### Worker Entry Point
+`worker-app.ts` handles:
+- `/api/auth/*` → Better Auth handler
+- `/api/v1/oembed` → oEmbed API for Notion/Slack embeds
+- Queue consumer for embedding jobs
+- All other routes → TanStack Start SSR
 
 ### Component Patterns
 - UI components: `src/components/ui/` (shadcn, don't edit directly)
