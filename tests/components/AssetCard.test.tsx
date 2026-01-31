@@ -137,4 +137,63 @@ describe('AssetCard', () => {
     const img = screen.getByRole('img')
     expect(img).toHaveAttribute('loading', 'lazy')
   })
+
+  describe('drag and drop', () => {
+    it('should set drag data for external apps (Figma)', () => {
+      const asset = createAssetWithUrl({
+        id: 'drag-test-asset',
+        filename: 'drag-test.png',
+      })
+      renderWithRouter(<AssetCard asset={asset} />)
+
+      const link = screen.getAllByRole('link')[0]
+      const dataTransfer = {
+        setData: vi.fn(),
+        effectAllowed: '',
+      }
+
+      fireEvent.dragStart(link, { dataTransfer })
+
+      // Should set URI list for Figma and other apps
+      expect(dataTransfer.setData).toHaveBeenCalledWith('text/uri-list', asset.url)
+      expect(dataTransfer.setData).toHaveBeenCalledWith('text/plain', asset.url)
+    })
+
+    it('should set drag data for internal folder moves', () => {
+      const asset = createAssetWithUrl({
+        id: 'internal-drag-asset',
+        filename: 'internal-drag.png',
+      })
+      renderWithRouter(<AssetCard asset={asset} />)
+
+      const link = screen.getAllByRole('link')[0]
+      const dataTransfer = {
+        setData: vi.fn(),
+        effectAllowed: '',
+      }
+
+      fireEvent.dragStart(link, { dataTransfer })
+
+      // Should set internal archiv data for folder moves
+      expect(dataTransfer.setData).toHaveBeenCalledWith(
+        'application/x-archiv-asset',
+        expect.stringContaining('internal-drag-asset')
+      )
+    })
+
+    it('should set effectAllowed to copyMove', () => {
+      const asset = createAssetWithUrl()
+      renderWithRouter(<AssetCard asset={asset} />)
+
+      const link = screen.getAllByRole('link')[0]
+      const dataTransfer = {
+        setData: vi.fn(),
+        effectAllowed: '',
+      }
+
+      fireEvent.dragStart(link, { dataTransfer })
+
+      expect(dataTransfer.effectAllowed).toBe('copyMove')
+    })
+  })
 })

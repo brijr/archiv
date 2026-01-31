@@ -56,7 +56,8 @@ CREATE TABLE IF NOT EXISTS organizations (
   slug TEXT NOT NULL UNIQUE,
   logo TEXT,
   metadata TEXT,
-  created_at INTEGER DEFAULT (unixepoch())
+  created_at INTEGER DEFAULT (unixepoch()),
+  updated_at INTEGER DEFAULT (unixepoch())
 );
 
 CREATE TABLE IF NOT EXISTS members (
