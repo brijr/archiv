@@ -65,7 +65,12 @@ export function AssetCard({
           // Set data for Figma and other apps that accept dropped URLs
           e.dataTransfer.setData("text/uri-list", asset.url)
           e.dataTransfer.setData("text/plain", asset.url)
-          e.dataTransfer.effectAllowed = "copy"
+          // Set data for internal folder moves
+          e.dataTransfer.setData("application/x-archiv-asset", JSON.stringify({
+            id: asset.id,
+            filename: asset.filename,
+          }))
+          e.dataTransfer.effectAllowed = "copyMove"
         }}
       >
         {showThumbnail ? (

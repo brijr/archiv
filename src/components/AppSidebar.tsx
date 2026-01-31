@@ -12,7 +12,10 @@ import {
 } from "@hugeicons/core-free-icons"
 
 import { getFolderTree } from "@/lib/server/folders"
+import { moveAssets } from "@/lib/server/assets"
 import type { FolderWithChildren } from "@/lib/types"
+import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 import {
   Sidebar,
@@ -61,13 +64,47 @@ const navItems = [
 function FolderTreeItem({
   folder,
   level = 0,
+  onAssetMoved,
 }: {
   folder: FolderWithChildren
   level?: number
+  onAssetMoved?: () => void
 }) {
   const location = useLocation()
   const isActive = location.pathname === `/folder/${folder.slug}`
   const hasChildren = folder.children.length > 0
+  const [isDragOver, setIsDragOver] = useState(false)
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes("application/x-archiv-asset")) {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragOver(true)
+    }
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.stopPropagation()
+    setIsDragOver(false)
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+
+    const data = e.dataTransfer.getData("application/x-archiv-asset")
+    if (data) {
+      try {
+        const asset = JSON.parse(data)
+        await moveAssets({ data: { ids: [asset.id], folderId: folder.id } })
+        toast.success(`Moved "${asset.filename}" to ${folder.name}`)
+        onAssetMoved?.()
+      } catch {
+        toast.error("Failed to move asset")
+      }
+    }
+  }
 
   if (level === 0) {
     return (
@@ -76,6 +113,10 @@ function FolderTreeItem({
           asChild
           isActive={isActive}
           tooltip={folder.name}
+          className={cn(isDragOver && "bg-accent ring-2 ring-primary")}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
         >
           <Link to="/folder/$slug" params={{ slug: folder.slug }}>
             <HugeiconsIcon icon={FolderOpenIcon} strokeWidth={2} />
@@ -85,7 +126,7 @@ function FolderTreeItem({
         {hasChildren && (
           <SidebarMenuSub>
             {folder.children.map((child) => (
-              <FolderTreeItem key={child.id} folder={child} level={level + 1} />
+              <FolderTreeItem key={child.id} folder={child} level={level + 1} onAssetMoved={onAssetMoved} />
             ))}
           </SidebarMenuSub>
         )}
@@ -95,13 +136,72 @@ function FolderTreeItem({
 
   return (
     <SidebarMenuSubItem>
-      <SidebarMenuSubButton asChild isActive={isActive}>
+      <SidebarMenuSubButton
+        asChild
+        isActive={isActive}
+        className={cn(isDragOver && "bg-accent ring-2 ring-primary")}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <Link to="/folder/$slug" params={{ slug: folder.slug }}>
           <HugeiconsIcon icon={FolderOpenIcon} strokeWidth={2} className="h-4 w-4" />
           <span>{folder.name}</span>
         </Link>
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>
+  )
+}
+
+function UnfiledDropTarget({ onAssetMoved }: { onAssetMoved?: () => void }) {
+  const [isDragOver, setIsDragOver] = useState(false)
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes("application/x-archiv-asset")) {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragOver(true)
+    }
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.stopPropagation()
+    setIsDragOver(false)
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+
+    const data = e.dataTransfer.getData("application/x-archiv-asset")
+    if (data) {
+      try {
+        const asset = JSON.parse(data)
+        await moveAssets({ data: { ids: [asset.id], folderId: null } })
+        toast.success(`Moved "${asset.filename}" to Unfiled`)
+        onAssetMoved?.()
+      } catch {
+        toast.error("Failed to move asset")
+      }
+    }
+  }
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        className={cn(
+          "text-muted-foreground",
+          isDragOver && "bg-accent ring-2 ring-primary text-foreground"
+        )}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <HugeiconsIcon icon={GridViewIcon} strokeWidth={2} />
+        <span>Unfiled</span>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   )
 }
 
@@ -172,9 +272,10 @@ export function AppSidebar() {
             </SidebarGroupAction>
             <SidebarGroupContent>
               <SidebarMenu>
+                <UnfiledDropTarget onAssetMoved={loadFolders} />
                 {folders.length > 0 ? (
                   folders.map((folder) => (
-                    <FolderTreeItem key={folder.id} folder={folder} />
+                    <FolderTreeItem key={folder.id} folder={folder} onAssetMoved={loadFolders} />
                   ))
                 ) : (
                   <SidebarMenuItem>

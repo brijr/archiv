@@ -5,7 +5,9 @@ import { ArrowLeft01Icon, FolderOpenIcon, Edit02Icon, Delete02Icon, Share01Icon,
 import { toast } from "sonner"
 
 import { getFolder, updateFolder, deleteFolder } from "@/lib/server/folders"
+import { moveAssets } from "@/lib/server/assets"
 import { createShareLink } from "@/lib/server/share"
+import { cn } from "@/lib/utils"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card"
@@ -85,6 +87,41 @@ function FolderPage() {
   const [shareAllowDownload, setShareAllowDownload] = useState(true)
   const [copied, setCopied] = useState(false)
 
+  // Drop target state
+  const [isDragOver, setIsDragOver] = useState(false)
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes("application/x-archiv-asset")) {
+      e.preventDefault()
+      setIsDragOver(true)
+    }
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only trigger if leaving the container, not entering children
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false)
+    }
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+
+    const data = e.dataTransfer.getData("application/x-archiv-asset")
+    if (data) {
+      try {
+        const asset = JSON.parse(data)
+        await moveAssets({ data: { ids: [asset.id], folderId: folder.id } })
+        toast.success(`Moved "${asset.filename}" to ${folder.name}`)
+        // Reload the page to show the new asset
+        window.location.reload()
+      } catch {
+        toast.error("Failed to move asset")
+      }
+    }
+  }
+
   const handleRename = async () => {
     if (!newName.trim()) {
       toast.error("Please enter a folder name")
@@ -161,7 +198,12 @@ function FolderPage() {
   const hasSubfolders = folder.subfolders.length > 0
 
   return (
-    <div className="p-6">
+    <div
+      className={cn("p-6 min-h-full", isDragOver && "ring-2 ring-primary ring-inset bg-primary/5")}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
