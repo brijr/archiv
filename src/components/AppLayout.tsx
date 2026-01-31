@@ -38,6 +38,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { data: session, isPending: sessionPending } = useSession()
   const [orgs, setOrgs] = useState<Organization[]>([])
   const [orgsLoading, setOrgsLoading] = useState(true)
+  const [orgsFetchFailed, setOrgsFetchFailed] = useState(false)
 
   const isPublicRoute = publicRoutes.some((route) => location.pathname.startsWith(route))
   const isPending = sessionPending || (!isPublicRoute && orgsLoading)
@@ -50,13 +51,18 @@ export function AppLayout({ children }: AppLayoutProps) {
         return
       }
 
+      setOrgsFetchFailed(false)
       try {
         const result = await organization.list()
         if (result.data) {
           setOrgs(result.data as Organization[])
+        } else if (result.error) {
+          console.error("Failed to fetch organizations:", result.error)
+          setOrgsFetchFailed(true)
         }
       } catch (error) {
         console.error("Failed to fetch organizations:", error)
+        setOrgsFetchFailed(true)
       } finally {
         setOrgsLoading(false)
       }
@@ -80,6 +86,11 @@ export function AppLayout({ children }: AppLayoutProps) {
 
     // Redirect to workspace creation if no active organization
     if (!session.session.activeOrganizationId) {
+      // Don't redirect if we failed to fetch orgs - could be a transient error
+      if (orgsFetchFailed) {
+        return
+      }
+
       // Check if user has any organizations
       if (orgs.length > 0) {
         // Auto-select first organization
@@ -87,10 +98,11 @@ export function AppLayout({ children }: AppLayoutProps) {
           window.location.reload()
         })
       } else {
+        // Only redirect if we successfully confirmed the user has no orgs
         navigate({ to: "/workspace/create" })
       }
     }
-  }, [session, orgs, isPending, isPublicRoute, navigate])
+  }, [session, orgs, orgsFetchFailed, isPending, isPublicRoute, navigate])
 
   // For public routes, render without sidebar
   if (isPublicRoute) {
