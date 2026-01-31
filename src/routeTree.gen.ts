@@ -11,10 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as TagsRouteImport } from './routes/tags'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as WorkspaceCreateRouteImport } from './routes/workspace/create'
 import { Route as SettingsWorkspaceRouteImport } from './routes/settings/workspace'
 import { Route as SettingsSearchRouteImport } from './routes/settings/search'
@@ -41,6 +43,11 @@ const TagsRoute = TagsRouteImport.update({
   path: '/tags',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -61,25 +68,30 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const WorkspaceCreateRoute = WorkspaceCreateRouteImport.update({
   id: '/workspace/create',
   path: '/workspace/create',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsWorkspaceRoute = SettingsWorkspaceRouteImport.update({
-  id: '/settings/workspace',
-  path: '/settings/workspace',
-  getParentRoute: () => rootRouteImport,
+  id: '/workspace',
+  path: '/workspace',
+  getParentRoute: () => SettingsRoute,
 } as any)
 const SettingsSearchRoute = SettingsSearchRouteImport.update({
-  id: '/settings/search',
-  path: '/settings/search',
-  getParentRoute: () => rootRouteImport,
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => SettingsRoute,
 } as any)
 const SettingsApiKeysRoute = SettingsApiKeysRouteImport.update({
-  id: '/settings/api-keys',
-  path: '/settings/api-keys',
-  getParentRoute: () => rootRouteImport,
+  id: '/api-keys',
+  path: '/api-keys',
+  getParentRoute: () => SettingsRoute,
 } as any)
 const STokenRoute = STokenRouteImport.update({
   id: '/s/$token',
@@ -142,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/tags': typeof TagsRoute
   '/upload': typeof UploadRoute
   '/asset/$id': typeof AssetIdRoute
@@ -152,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/settings/search': typeof SettingsSearchRoute
   '/settings/workspace': typeof SettingsWorkspaceRoute
   '/workspace/create': typeof WorkspaceCreateRoute
+  '/settings/': typeof SettingsIndexRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -175,6 +189,7 @@ export interface FileRoutesByTo {
   '/settings/search': typeof SettingsSearchRoute
   '/settings/workspace': typeof SettingsWorkspaceRoute
   '/workspace/create': typeof WorkspaceCreateRoute
+  '/settings': typeof SettingsIndexRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -189,6 +204,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/search': typeof SearchRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/tags': typeof TagsRoute
   '/upload': typeof UploadRoute
   '/asset/$id': typeof AssetIdRoute
@@ -199,6 +215,7 @@ export interface FileRoutesById {
   '/settings/search': typeof SettingsSearchRoute
   '/settings/workspace': typeof SettingsWorkspaceRoute
   '/workspace/create': typeof WorkspaceCreateRoute
+  '/settings/': typeof SettingsIndexRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -214,6 +231,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/search'
+    | '/settings'
     | '/tags'
     | '/upload'
     | '/asset/$id'
@@ -224,6 +242,7 @@ export interface FileRouteTypes {
     | '/settings/search'
     | '/settings/workspace'
     | '/workspace/create'
+    | '/settings/'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -247,6 +266,7 @@ export interface FileRouteTypes {
     | '/settings/search'
     | '/settings/workspace'
     | '/workspace/create'
+    | '/settings'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -260,6 +280,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/search'
+    | '/settings'
     | '/tags'
     | '/upload'
     | '/asset/$id'
@@ -270,6 +291,7 @@ export interface FileRouteTypes {
     | '/settings/search'
     | '/settings/workspace'
     | '/workspace/create'
+    | '/settings/'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -284,15 +306,13 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   SearchRoute: typeof SearchRoute
+  SettingsRoute: typeof SettingsRouteWithChildren
   TagsRoute: typeof TagsRoute
   UploadRoute: typeof UploadRoute
   AssetIdRoute: typeof AssetIdRoute
   EmbedTokenRoute: typeof EmbedTokenRoute
   FolderSlugRoute: typeof FolderSlugRoute
   STokenRoute: typeof STokenRoute
-  SettingsApiKeysRoute: typeof SettingsApiKeysRoute
-  SettingsSearchRoute: typeof SettingsSearchRoute
-  SettingsWorkspaceRoute: typeof SettingsWorkspaceRoute
   WorkspaceCreateRoute: typeof WorkspaceCreateRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
   DemoStartApiRequestRoute: typeof DemoStartApiRequestRoute
@@ -317,6 +337,13 @@ declare module '@tanstack/react-router' {
       path: '/tags'
       fullPath: '/tags'
       preLoaderRoute: typeof TagsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/search': {
@@ -347,6 +374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/': {
+      id: '/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/workspace/create': {
       id: '/workspace/create'
       path: '/workspace/create'
@@ -356,24 +390,24 @@ declare module '@tanstack/react-router' {
     }
     '/settings/workspace': {
       id: '/settings/workspace'
-      path: '/settings/workspace'
+      path: '/workspace'
       fullPath: '/settings/workspace'
       preLoaderRoute: typeof SettingsWorkspaceRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof SettingsRoute
     }
     '/settings/search': {
       id: '/settings/search'
-      path: '/settings/search'
+      path: '/search'
       fullPath: '/settings/search'
       preLoaderRoute: typeof SettingsSearchRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof SettingsRoute
     }
     '/settings/api-keys': {
       id: '/settings/api-keys'
-      path: '/settings/api-keys'
+      path: '/api-keys'
       fullPath: '/settings/api-keys'
       preLoaderRoute: typeof SettingsApiKeysRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof SettingsRoute
     }
     '/s/$token': {
       id: '/s/$token'
@@ -455,20 +489,36 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface SettingsRouteChildren {
+  SettingsApiKeysRoute: typeof SettingsApiKeysRoute
+  SettingsSearchRoute: typeof SettingsSearchRoute
+  SettingsWorkspaceRoute: typeof SettingsWorkspaceRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
+}
+
+const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsApiKeysRoute: SettingsApiKeysRoute,
+  SettingsSearchRoute: SettingsSearchRoute,
+  SettingsWorkspaceRoute: SettingsWorkspaceRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
+}
+
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
+  SettingsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   SearchRoute: SearchRoute,
+  SettingsRoute: SettingsRouteWithChildren,
   TagsRoute: TagsRoute,
   UploadRoute: UploadRoute,
   AssetIdRoute: AssetIdRoute,
   EmbedTokenRoute: EmbedTokenRoute,
   FolderSlugRoute: FolderSlugRoute,
   STokenRoute: STokenRoute,
-  SettingsApiKeysRoute: SettingsApiKeysRoute,
-  SettingsSearchRoute: SettingsSearchRoute,
-  SettingsWorkspaceRoute: SettingsWorkspaceRoute,
   WorkspaceCreateRoute: WorkspaceCreateRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,
   DemoStartApiRequestRoute: DemoStartApiRequestRoute,
